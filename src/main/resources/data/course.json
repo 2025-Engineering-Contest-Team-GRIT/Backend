@@ -1,0 +1,1713 @@
+[
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M020026",
+    "name": "AI를 이용한 주식가치평가",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전기",
+    "id": "CTE0001",
+    "name": "컴퓨터프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전기",
+    "id": "CTE0001",
+    "name": "컴퓨터프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020001",
+    "name": "객체지향언어1",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020002",
+    "name": "자료구조",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020003",
+    "name": "컴퓨터구조",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020005",
+    "name": "프로그래밍언어론",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020006",
+    "name": "확률및통계",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020007",
+    "name": "객체지향언어2",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020008",
+    "name": "데이터통신",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020009",
+    "name": "선형대수",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020010",
+    "name": "알고리즘",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020011",
+    "name": "오픈소스소프트웨어",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전필",
+    "id": "V021003",
+    "name": "모바일&스마트시스템",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020012",
+    "name": "데이터베이스",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020013",
+    "name": "소프트웨어공학",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020014",
+    "name": "운영체제",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020015",
+    "name": "컴퓨터그래픽스",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전필",
+    "id": "V021004",
+    "name": "안드로이드프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V022003",
+    "name": "데이터마이닝",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V024004",
+    "name": "웹서버프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020016",
+    "name": "시스템프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020017",
+    "name": "네트워크프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020018",
+    "name": "설계패턴",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020019",
+    "name": "컴퓨터비젼",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020038",
+    "name": "기업연계 SW캡스톤디자인",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전필",
+    "id": "V021006",
+    "name": "고급모바일프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V023005",
+    "name": "가상현실",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020020",
+    "name": "정보보안",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020021",
+    "name": "고급시스템프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020022",
+    "name": "컴파일러",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020024",
+    "name": "SW 통합구현(IPP)",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020025",
+    "name": "사용자인터페이스와 서버구현(IPP)",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V020026",
+    "name": "SW설계 및 테스트(IPP)",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020028",
+    "name": "취창업 세미나",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V021005",
+    "name": "Ios프로그래밍",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V021008",
+    "name": "모바일 캡스톤디자인",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020023",
+    "name": "융합캡스톤디자인",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020027",
+    "name": "데이터베이스 시스템 구현(IPP)",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020035",
+    "name": "SW온캠퍼스인턴십",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020036",
+    "name": "XR 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020037",
+    "name": "AI/클라우드 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전필",
+    "id": "V021009",
+    "name": "모바일시스템응용프로젝트",
+    "credits": 3,
+    "track": "모바일소프트웨어 트랙"
+  },
+
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M020026",
+    "name": "AI를 이용한 주식가치평가",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전기",
+    "id": "CTE0001",
+    "name": "컴퓨터프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전기",
+    "id": "CTE0001",
+    "name": "컴퓨터프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020001",
+    "name": "객체지향언어1",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020002",
+    "name": "자료구조",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020003",
+    "name": "컴퓨터구조",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020005",
+    "name": "프로그래밍언어론",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020006",
+    "name": "확률및통계",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020007",
+    "name": "객체지향언어2",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020008",
+    "name": "데이터통신",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020009",
+    "name": "선형대수",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020010",
+    "name": "알고리즘",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020011",
+    "name": "오픈소스소프트웨어",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전필",
+    "id": "V022006",
+    "name": "빅데이터기초",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V024003",
+    "name": "웹프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020012",
+    "name": "데이터베이스",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020013",
+    "name": "소프트웨어공학",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020014",
+    "name": "운영체제",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020015",
+    "name": "컴퓨터그래픽스",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V021004",
+    "name": "안드로이드프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전필",
+    "id": "V022003",
+    "name": "데이터마이닝",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V023004",
+    "name": "영상처리",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020016",
+    "name": "시스템프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020017",
+    "name": "네트워크프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020018",
+    "name": "설계패턴",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020019",
+    "name": "컴퓨터비젼",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020038",
+    "name": "기업연계 SW캡스톤디자인",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전필",
+    "id": "V022004",
+    "name": "데이터베이스설계",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020020",
+    "name": "정보보안",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020021",
+    "name": "고급시스템프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020022",
+    "name": "컴파일러",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020024",
+    "name": "SW 통합구현(IPP)",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020025",
+    "name": "사용자인터페이스와 서버구현(IPP)",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V020026",
+    "name": "SW설계 및 테스트(IPP)",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020028",
+    "name": "취창업 세미나",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V022005",
+    "name": "빅데이터프로그래밍",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V022008",
+    "name": "빅데이터 캡스톤디자인",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020023",
+    "name": "융합캡스톤디자인",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020027",
+    "name": "데이터베이스 시스템 구현(IPP)",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020035",
+    "name": "SW온캠퍼스인턴십",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020036",
+    "name": "XR 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020037",
+    "name": "AI/클라우드 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전필",
+    "id": "V022009",
+    "name": "인공지능",
+    "credits": 3,
+    "track": "빅데이터 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M020026",
+    "name": "AI를 이용한 주식가치평가",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M020040",
+    "name": "논리적 사고와 프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전기",
+    "id": "CTE0002",
+    "name": "웹프로그래밍기초",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전기",
+    "id": "CTE0002",
+    "name": "웹프로그래밍기초",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020001",
+    "name": "객체지향언어1",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020002",
+    "name": "자료구조",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020003",
+    "name": "컴퓨터구조",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020005",
+    "name": "프로그래밍언어론",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020006",
+    "name": "확률및통계",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020007",
+    "name": "객체지향언어2",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020008",
+    "name": "데이터통신",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020009",
+    "name": "선형대수",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020010",
+    "name": "알고리즘",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020011",
+    "name": "오픈소스소프트웨어",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전필",
+    "id": "V024003",
+    "name": "웹프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020012",
+    "name": "데이터베이스",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020013",
+    "name": "소프트웨어공학",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020014",
+    "name": "운영체제",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020015",
+    "name": "컴퓨터그래픽스",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V021004",
+    "name": "안드로이드프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V022003",
+    "name": "데이터마이닝",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전필",
+    "id": "V024004",
+    "name": "웹서버프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020016",
+    "name": "시스템프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020017",
+    "name": "네트워크프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020018",
+    "name": "설계패턴",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020019",
+    "name": "컴퓨터비젼",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020038",
+    "name": "기업연계 SW캡스톤디자인",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V023005",
+    "name": "가상현실",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전필",
+    "id": "V024005",
+    "name": "웹프레임워크1",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020020",
+    "name": "정보보안",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020021",
+    "name": "고급시스템프로그래밍",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020022",
+    "name": "컴파일러",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020024",
+    "name": "SW 통합구현(IPP)",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020025",
+    "name": "사용자인터페이스와 서버구현(IPP)",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V020026",
+    "name": "SW설계 및 테스트(IPP)",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020028",
+    "name": "취창업 세미나",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V024006",
+    "name": "웹프레임워크2",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V024008",
+    "name": "웹공학 캡스톤디자인",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020023",
+    "name": "융합캡스톤디자인",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020027",
+    "name": "데이터베이스 시스템 구현(IPP)",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020035",
+    "name": "SW온캠퍼스인턴십",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020036",
+    "name": "XR 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020037",
+    "name": "AI/클라우드 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전필",
+    "id": "V024009",
+    "name": "클라우드 컴퓨팅",
+    "credits": 3,
+    "track": "웹공학 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M020005",
+    "name": "가상현실 애니메이션 캡스톤디자인",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "M050008",
+    "name": "비즈니스 웹어플리케이션 구축 프로젝트",
+    "credits": 6,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "1",
+    "category": "전기",
+    "id": "CTE0002",
+    "name": "웹프로그래밍기초",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전기",
+    "id": "CTE0002",
+    "name": "웹프로그래밍기초",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 1,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020001",
+    "name": "객체지향언어1",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020002",
+    "name": "자료구조",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020003",
+    "name": "컴퓨터구조",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020004",
+    "name": "프로그래밍랩",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020005",
+    "name": "프로그래밍언어론",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020006",
+    "name": "확률및통계",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020007",
+    "name": "객체지향언어2",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020008",
+    "name": "데이터통신",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020009",
+    "name": "선형대수",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020010",
+    "name": "알고리즘",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020011",
+    "name": "오픈소스소프트웨어",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V022006",
+    "name": "빅데이터기초",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전필",
+    "id": "V023003",
+    "name": "게임그래픽&애니메이션",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 2,
+    "semester": "2",
+    "category": "전선",
+    "id": "V024003",
+    "name": "웹프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020012",
+    "name": "데이터베이스",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020013",
+    "name": "소프트웨어공학",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020014",
+    "name": "운영체제",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020015",
+    "name": "컴퓨터그래픽스",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전선",
+    "id": "V021004",
+    "name": "안드로이드프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전필",
+    "id": "V023004",
+    "name": "영상처리",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "1",
+    "category": "전필",
+    "id": "V023009",
+    "name": "XR 프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020016",
+    "name": "시스템프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020017",
+    "name": "네트워크프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020018",
+    "name": "설계패턴",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020019",
+    "name": "컴퓨터비젼",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020038",
+    "name": "기업연계 SW캡스톤디자인",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 3,
+    "semester": "2",
+    "category": "전필",
+    "id": "V023005",
+    "name": "가상현실",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020020",
+    "name": "정보보안",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020021",
+    "name": "고급시스템프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020022",
+    "name": "컴파일러",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020024",
+    "name": "SW 통합구현(IPP)",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020025",
+    "name": "사용자인터페이스와 서버구현(IPP)",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V020026",
+    "name": "SW설계 및 테스트(IPP)",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전선",
+    "id": "V020028",
+    "name": "취창업 세미나",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V023006",
+    "name": "디지털콘텐츠기획및제작",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "1",
+    "category": "전필",
+    "id": "V023008",
+    "name": "디지털콘텐츠·가상현실 캡스톤디자인",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020023",
+    "name": "융합캡스톤디자인",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020027",
+    "name": "데이터베이스 시스템 구현(IPP)",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020035",
+    "name": "SW온캠퍼스인턴십",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020036",
+    "name": "XR 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전선",
+    "id": "V020037",
+    "name": "AI/클라우드 온캠퍼스 인턴십",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  },
+  {
+    "year": 4,
+    "semester": "2",
+    "category": "전필",
+    "id": "V023010",
+    "name": "게임 프로그래밍",
+    "credits": 3,
+    "track": "디지털콘텐츠·가상현실 트랙"
+  }
+]
