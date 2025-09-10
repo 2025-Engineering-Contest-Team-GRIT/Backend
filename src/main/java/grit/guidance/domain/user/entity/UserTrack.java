@@ -25,7 +25,7 @@ public class UserTrack extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private Users user; // User 엔티티와의 연관관계
+    private Users users; // User 엔티티와의 연관관계
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "track_id", nullable = false)
@@ -36,8 +36,8 @@ public class UserTrack extends BaseEntity {
     private TrackType trackType;
 
     @Builder
-    private UserTrack(Users user, Track track, TrackType trackType) {
-        this.user = user;
+    private UserTrack(Users users, Track track, TrackType trackType) {
+        this.users = users;
         this.track = track;
         this.trackType = trackType;
     }
