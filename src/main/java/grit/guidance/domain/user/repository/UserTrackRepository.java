@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserTrackRepository extends JpaRepository<UserTrack, Long> {
-    void deleteByUser(Users user);
+    void deleteByUsers(Users user);
 }

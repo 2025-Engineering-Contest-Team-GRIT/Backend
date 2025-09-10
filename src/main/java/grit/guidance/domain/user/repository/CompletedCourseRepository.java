@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CompletedCourseRepository extends JpaRepository<CompletedCourse, Long> {
-    void deleteByUser(Users user);
+    void deleteByUsers(Users user);
 }
