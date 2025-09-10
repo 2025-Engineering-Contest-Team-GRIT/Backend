@@ -29,6 +29,9 @@ public class Course extends BaseEntity {
     @Column(name = "course_code", nullable = false, length = 20)
     private String courseCode;
 
+    @Column(name = "credits", nullable = false)
+    private Integer credits;
+
     @Column(name = "course_description", columnDefinition = "TEXT")
     private String description;
 
@@ -40,9 +43,10 @@ public class Course extends BaseEntity {
     private Semester openSemester;
 
     @Builder
-    public Course(String courseName, String courseCode, String description, Integer openGrade, Semester openSemester) {
+    public Course(String courseName, String courseCode,Integer credits, String description, Integer openGrade, Semester openSemester) {
         this.courseName = courseName;
         this.courseCode = courseCode;
+        this.credits = credits;
         this.description = description;
         this.openGrade = openGrade;
         this.openSemester = openSemester;
