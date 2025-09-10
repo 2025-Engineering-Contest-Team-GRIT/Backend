@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "course")
 @Getter
@@ -41,6 +44,14 @@ public class Course extends BaseEntity {
     @Enumerated(EnumType.STRING) // Enum타입이기 때문에 명시적 지정
     @Column(name = "open_semester", nullable = false)
     private Semester openSemester;
+
+    // 1:N 관계 - course와 completed_course (양방향)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<grit.guidance.domain.user.entity.CompletedCourse> completedCourses = new ArrayList<>();
+
+    // 1:N 관계 - course와 favorite_course (양방향)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<grit.guidance.domain.user.entity.FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
     public Course(String courseName, String courseCode,Integer credits, String description, Integer openGrade, Semester openSemester) {
