@@ -49,6 +49,13 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// html 파싱 라이브러리
+	implementation 'org.jsoup:jsoup:1.17.2'
+
+	// .env 파일을 사용하기 위한 라이브러리
+	testImplementation 'io.github.cdimascio:java-dotenv:5.2.2'
+
 }
 
 tasks.named('test') {

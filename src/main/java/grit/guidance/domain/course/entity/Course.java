@@ -54,7 +54,7 @@ public class Course extends BaseEntity {
     private List<grit.guidance.domain.user.entity.FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    public Course(String courseName, String courseCode,Integer credits, String description, Integer openGrade, Semester openSemester) {
+    private Course(String courseName, String courseCode,Integer credits, String description, Integer openGrade, Semester openSemester) {
         this.courseName = courseName;
         this.courseCode = courseCode;
         this.credits = credits;
