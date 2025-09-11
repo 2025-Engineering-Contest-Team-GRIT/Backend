@@ -138,12 +138,23 @@ public class UserAcademicInfoSyncService {
     }
 
     private Semester parseSemesterFromSemesterString(String semesterString) {
-        if (semesterString == null) return Semester.FIRST; // 기본값
-        if (semesterString.contains("1학기")) return Semester.FIRST;
-        if (semesterString.contains("2학기")) return Semester.SECOND;
-        if (semesterString.contains("여름")) return Semester.SUMMER;
-        if (semesterString.contains("겨울")) return Semester.WINTER;
-        return Semester.FIRST; // 기본값
+        if (semesterString == null) {
+            return Semester.FIRST; // 기본값
+        }
+        // 공백 제거
+        String processedString = semesterString.replaceAll("\\s+", "");
+
+        if (processedString.contains("여름학기")) {
+            return Semester.SUMMER;
+        }
+        if (processedString.contains("겨울학기")) {
+            return Semester.WINTER;
+        }
+        if (processedString.contains("2학기")) {
+            return Semester.SECOND;
+        }
+
+        return Semester.FIRST;
     }
 
     private CompletedGrade parseGradeFromString(String gradeString) {
