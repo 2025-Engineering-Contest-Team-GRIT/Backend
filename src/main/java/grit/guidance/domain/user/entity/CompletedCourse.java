@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "completed_course")
 @Getter
@@ -37,32 +39,43 @@ public class CompletedCourse extends BaseEntity {
     @Column(name = "completed_year", nullable = false)
     private Integer completedYear; // 이수년도
 
-    @Column(name = "completed_grade", nullable = false)
-    private Integer completedGrade; // 이수학년 (1-4, 추가학년은 4)
+    @Column(name = "grade_level", nullable = false)
+    private Integer gradeLevel; // 이수학년 (1-4, 추가학년은 4)
 
     @Enumerated(EnumType.STRING)
     @Column(name = "completed_semester", nullable = false)
     private Semester completedSemester; // 이수학기 (1, 2, 여름학기, 계절학기)
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "completed_grade", nullable = false)
+    private CompletedGrade completedGrade; // 성적 등급 (A+, P 등)
+
+    @Column(name = "grade_point", precision = 2, scale = 1)
+    private BigDecimal gradePoint; // 성적 평점 (4.5, 4.0 등)
+
     @Builder
     public CompletedCourse(Users users, Course course, Integer completedYear, 
-                          Integer completedGrade, Semester completedSemester) {
+                          Integer gradeLevel, Semester completedSemester, CompletedGrade completedGrade, BigDecimal gradePoint) {
         this.users = users;
         this.course = course;
         this.completedYear = completedYear;
-        this.completedGrade = completedGrade;
+        this.gradeLevel = gradeLevel;
         this.completedSemester = completedSemester;
+        this.completedGrade = completedGrade;
+        this.gradePoint = gradePoint;
     }
 
     // 비즈니스 메서드
-    public void updateCompletedInfo(Integer completedYear, Integer completedGrade, Semester completedSemester) {
-        validateCompletedGrade(completedGrade);
+    public void updateCompletedInfo(Integer completedYear, Integer gradeLevel, Semester completedSemester, CompletedGrade completedGrade) {
+        validateGradeLevel(gradeLevel);
         this.completedYear = completedYear;
-        this.completedGrade = completedGrade;
+        this.gradeLevel = gradeLevel; // 이수학년
         this.completedSemester = completedSemester;
+        this.completedGrade = completedGrade; // 이수 성적
+        this.gradePoint = completedGrade.getGradePoint();
     }
 
-    private void validateCompletedGrade(Integer grade) {
+    private void validateGradeLevel(Integer grade) {
         if (grade < 1 || grade > 4) {
             throw new IllegalArgumentException("이수학년은 1-4 범위여야 합니다.");
         }
