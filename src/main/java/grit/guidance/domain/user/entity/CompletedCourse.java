@@ -2,6 +2,7 @@ package grit.guidance.domain.user.entity;
 
 import grit.guidance.domain.course.entity.Course;
 import grit.guidance.domain.course.entity.Semester;
+import grit.guidance.domain.course.entity.Track;
 import grit.guidance.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -35,6 +36,10 @@ public class CompletedCourse extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "track_id", nullable = false)
+    private Track track;
 
     @Column(name = "completed_year", nullable = false)
     private Integer completedYear; // 이수년도
