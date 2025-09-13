@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,9 @@ public class Users extends BaseEntity {
     @Column(name = "timetable", columnDefinition = "TEXT")
     private String timetable; // JSON 형태의 시간표
 
+    @Column(name = "last_crawl_time")
+    private LocalDateTime lastCrawlTime; // 마지막 크롤링 시간
+
     // 1:1 관계 - users와 setting (양방향)
     @OneToOne(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Setting setting;
@@ -52,10 +56,11 @@ public class Users extends BaseEntity {
     private List<FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    public Users(String studentId, BigDecimal gpa, String timetable) {
+    public Users(String studentId, BigDecimal gpa, String timetable, LocalDateTime lastCrawlTime) {
         this.studentId = studentId;
         this.gpa = gpa != null ? gpa : BigDecimal.ZERO;
         this.timetable = timetable;
+        this.lastCrawlTime = lastCrawlTime;
     }
 
     // 비즈니스 메서드
@@ -68,6 +73,10 @@ public class Users extends BaseEntity {
 
     public void updateTimetable(String timetable) {
         this.timetable = timetable;
+    }
+    
+    public void updateLastCrawlTime() {
+        this.lastCrawlTime = LocalDateTime.now();
     }
 }
 
