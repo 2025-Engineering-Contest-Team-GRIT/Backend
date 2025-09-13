@@ -35,6 +35,7 @@ public class LoginService {
     private final CourseRepository courseRepository;
     private final TrackRepository trackRepository;
     private final JwtService jwtService;
+    private final CrawlingConditionService crawlingConditionService;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -45,17 +46,32 @@ public class LoginService {
         }
 
         try {
-            // 2. 한성대 사이트에서 크롤링으로 로그인 시도
-            HansungDataResponse hansungData = crawlingService.fetchHansungData(
-                request.studentId().trim(), 
-                request.password().trim()
-            );
+            String studentId = request.studentId().trim();
+            String password = request.password().trim();
+            
+            // 2. 기존 사용자 조회
+            Users existingUser = usersRepository.findByStudentId(studentId).orElse(null);
+            
+            // 3. 크롤링 필요 여부 확인
+            boolean shouldCrawl = crawlingConditionService.shouldCrawl(existingUser);
+            
+            if (shouldCrawl) {
+                // 4. 크롤링이 필요한 경우에만 크롤링 실행
+                log.info("크롤링 실행: studentId={}", studentId);
+                HansungDataResponse hansungData = crawlingService.fetchHansungData(studentId, password);
+                
+                // 5. 크롤링 성공 시 사용자 정보 저장/업데이트
+                saveOrUpdateUser(studentId, hansungData);
+            } else {
+                log.info("크롤링 생략: studentId={}", studentId);
+                // 크롤링이 필요 없는 경우 기존 사용자 정보로 로그인 처리
+                if (existingUser == null) {
+                    throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
+                }
+            }
 
-            // 3. 크롤링 성공 시 사용자 정보 저장/업데이트
-            saveOrUpdateUser(request.studentId().trim(), hansungData);
-
-            // 4. JWT 토큰 생성
-            String accessToken = jwtService.generateToken(request.studentId().trim());
+            // 6. JWT 토큰 생성
+            String accessToken = jwtService.generateToken(studentId);
 
             return new LoginResponse(HttpStatus.CREATED.value(), accessToken);
 
@@ -68,6 +84,7 @@ public class LoginService {
         }
     }
 
+    @Transactional
     private void saveOrUpdateUser(String studentId, HansungDataResponse hansungData) {
         log.info("사용자 정보 저장/업데이트 시작: studentId={}", studentId);
         
@@ -78,8 +95,10 @@ public class LoginService {
             log.info("기존 사용자 정보 업데이트: userId={}", existingUser.getId());
             // 기존 완료된 과목들 삭제 (새로 크롤링한 데이터로 업데이트)
             completedCourseRepository.deleteByUsers(existingUser);
+            log.info("기존 완료된 과목들 삭제 완료: userId={}", existingUser.getId());
             // 기존 트랙 정보 삭제
             userTrackRepository.deleteByUsers(existingUser);
+            log.info("기존 트랙 정보 삭제 완료: userId={}", existingUser.getId());
         } else {
             log.info("새 사용자 생성: studentId={}", studentId);
             existingUser = Users.builder()
@@ -101,6 +120,12 @@ public class LoginService {
         // 3. 완료된 과목들 저장
         saveCompletedCourses(existingUser, hansungData.grades().semesters());
         
+        // 4. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
+        existingUser.updateLastCrawlTime(); // 크롤링 시간 업데이트
+        existingUser = usersRepository.save(existingUser); // @LastModifiedDate 트리거
+        log.info("사용자 크롤링 시간 업데이트 완료: studentId={}, lastCrawlTime={}, updatedAt={}", 
+                studentId, existingUser.getLastCrawlTime(), existingUser.getUpdatedAt());
+        
         log.info("사용자 정보 저장/업데이트 완료: studentId={}", studentId);
     }
     
@@ -110,17 +135,24 @@ public class LoginService {
     private void saveUserTracks(Users user, List<String> trackNames) {
         log.info("사용자 트랙 정보 저장 시작: userId={}, trackNames={}", user.getId(), trackNames);
         
-        for (String trackName : trackNames) {
+        for (int i = 0; i < trackNames.size(); i++) {
+            String trackName = trackNames.get(i);
             Optional<Track> trackOpt = trackRepository.findByTrackName(trackName);
             if (trackOpt.isPresent()) {
                 Track track = trackOpt.get();
+                
+                // 첫번째 트랙은 PRIMARY, 두번째는 SECONDARY
+                TrackType trackType = (i == 0) ? TrackType.PRIMARY : TrackType.SECONDARY;
+                
+                // 기존 데이터는 이미 삭제되었으므로 중복 체크 불필요
+                
                 UserTrack userTrack = UserTrack.builder()
                     .users(user)
                     .track(track)
-                    .trackType(TrackType.PRIMARY) // 기본값으로 1트랙으로 설정
+                    .trackType(trackType)
                     .build();
                 userTrackRepository.save(userTrack);
-                log.info("트랙 정보 저장 완료: trackName={}", trackName);
+                log.info("트랙 정보 저장 완료: trackName={}, trackType={}", trackName, trackType);
             } else {
                 log.warn("트랙을 찾을 수 없음: trackName={}", trackName);
             }
@@ -182,6 +214,8 @@ public class LoginService {
                 if (courseOpt.isPresent()) {
                     Course courseEntity = courseOpt.get();
                     
+                    // 기존 데이터는 이미 삭제되었으므로 중복 체크 불필요
+                    
                     // 성적을 CompletedGrade enum으로 변환
                     CompletedGrade completedGrade = convertToCompletedGrade(course.grade());
                     
@@ -211,12 +245,12 @@ public class LoginService {
     }
     
     /**
-     * 학기명에서 연도 추출 (예: "2024년 1학기" -> 2024)
+     * 학기명에서 연도 추출 (예: "2025 학년도 1 학기" -> 2025)
      */
     private int extractYearFromSemesterName(String semesterName) {
         try {
-            // "2024년 1학기" 형태에서 연도 추출
-            String yearStr = semesterName.split("년")[0];
+            // "2025 학년도 1 학기" 형태에서 연도 추출
+            String yearStr = semesterName.split(" 학년도")[0];
             return Integer.parseInt(yearStr.trim());
         } catch (Exception e) {
             log.warn("학기명에서 연도 추출 실패: semesterName={}", semesterName);
@@ -225,12 +259,12 @@ public class LoginService {
     }
     
     /**
-     * 학기명에서 Semester enum 추출 (예: "2024년 1학기" -> FIRST)
+     * 학기명에서 Semester enum 추출 (예: "2025 학년도 1 학기" -> FIRST)
      */
     private Semester extractSemesterFromSemesterName(String semesterName) {
-        if (semesterName.contains("1학기")) {
+        if (semesterName.contains("1 학기")) {
             return Semester.FIRST;
-        } else if (semesterName.contains("2학기")) {
+        } else if (semesterName.contains("2 학기")) {
             return Semester.SECOND;
         } else {
             log.warn("학기명에서 학기 추출 실패: semesterName={}", semesterName);
@@ -249,14 +283,14 @@ public class LoginService {
         String trimmedGrade = gradeStr.trim();
         return switch (trimmedGrade) {
             case "A+" -> CompletedGrade.A_PLUS;
-            case "A" -> CompletedGrade.A;
+            case "A", "A0" -> CompletedGrade.A;
             case "B+" -> CompletedGrade.B_PLUS;
-            case "B" -> CompletedGrade.B;
+            case "B", "B0" -> CompletedGrade.B;
             case "C+" -> CompletedGrade.C_PLUS;
-            case "C" -> CompletedGrade.C;
+            case "C", "C0" -> CompletedGrade.C;
             case "D+" -> CompletedGrade.D_PLUS;
-            case "D" -> CompletedGrade.D;
-            case "F" -> CompletedGrade.F;
+            case "D", "D0" -> CompletedGrade.D;
+            case "F", "F0" -> CompletedGrade.F;
             case "P" -> CompletedGrade.PASS;
             default -> {
                 log.warn("알 수 없는 성적: {}", trimmedGrade);

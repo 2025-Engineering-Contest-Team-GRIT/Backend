@@ -2,6 +2,7 @@ package grit.guidance.domain.user.service;
 
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsersCrawlingService {
@@ -81,7 +83,16 @@ public class UsersCrawlingService {
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
 
         // 4. 결과 통합하여 반환
-        return new HansungDataResponse(userInfo, grades);
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades);
+        
+        // 5. 크롤링 결과 JSON 로그 출력
+        log.info("=== 크롤링 결과 JSON ===");
+        log.info("사용자 정보: {}", userInfo);
+        log.info("성적 정보: {}", grades);
+        log.info("전체 응답: {}", result);
+        log.info("========================");
+        
+        return result;
     }
 
     // --- 파싱 로직 (Python의 parser.py를 Jsoup으로 구현) ---
