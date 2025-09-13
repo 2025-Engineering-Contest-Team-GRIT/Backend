@@ -38,7 +38,7 @@ public class CompletedCourse extends BaseEntity {
     private Course course;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "track_id", nullable = false)
+    @JoinColumn(name = "track_id", nullable = true)
     private Track track;
 
     @Column(name = "completed_year", nullable = false)
@@ -59,10 +59,11 @@ public class CompletedCourse extends BaseEntity {
     private BigDecimal gradePoint; // 성적 평점 (4.5, 4.0 등)
 
     @Builder
-    public CompletedCourse(Users users, Course course, Integer completedYear, 
+    public CompletedCourse(Users users, Course course, Track track, Integer completedYear, 
                           Integer gradeLevel, Semester completedSemester, CompletedGrade completedGrade, BigDecimal gradePoint) {
         this.users = users;
         this.course = course;
+        this.track = track;
         this.completedYear = completedYear;
         this.gradeLevel = gradeLevel;
         this.completedSemester = completedSemester;
