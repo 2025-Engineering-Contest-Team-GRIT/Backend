@@ -200,6 +200,23 @@ public class LoginService {
     private void saveCompletedCourses(Users user, List<SemesterGradeResponse> semesters) {
         log.info("완료된 과목 저장 시작: userId={}", user.getId());
         
+        // 사용자의 트랙 정보 조회 (Primary, Secondary)
+        List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
+        Track primaryTrack = null;
+        Track secondaryTrack = null;
+        
+        for (UserTrack userTrack : userTracks) {
+            if (userTrack.getTrackType() == TrackType.PRIMARY) {
+                primaryTrack = userTrack.getTrack();
+            } else if (userTrack.getTrackType() == TrackType.SECONDARY) {
+                secondaryTrack = userTrack.getTrack();
+            }
+        }
+        
+        log.info("사용자 트랙 정보: primaryTrack={}, secondaryTrack={}", 
+                primaryTrack != null ? primaryTrack.getTrackName() : "null",
+                secondaryTrack != null ? secondaryTrack.getTrackName() : "null");
+        
         int savedCount = 0;
         int notFoundCount = 0;
         
@@ -219,10 +236,14 @@ public class LoginService {
                     // 성적을 CompletedGrade enum으로 변환
                     CompletedGrade completedGrade = convertToCompletedGrade(course.grade());
                     
+                    // 과목의 trackStatus에 따라 사용자의 Primary/Secondary 트랙 매핑
+                    Track track = mapTrackStatusToUserTrack(course.trackStatus(), primaryTrack, secondaryTrack);
+                    
                     // CompletedCourse 엔티티 생성 및 저장
                     CompletedCourse completedCourse = CompletedCourse.builder()
                         .users(user)
                         .course(courseEntity)
+                        .track(track) // 사용자의 Primary/Secondary 트랙 정보
                         .completedYear(year)
                         .gradeLevel(courseEntity.getOpenGrade()) // 과목의 개설학년 사용
                         .completedSemester(semesterEnum)
@@ -232,7 +253,9 @@ public class LoginService {
                     
                     completedCourseRepository.save(completedCourse);
                     savedCount++;
-                    log.debug("완료된 과목 저장: courseCode={}, grade={}", course.code(), course.grade());
+                    log.debug("완료된 과목 저장: courseCode={}, grade={}, trackStatus={}, track={}", 
+                            course.code(), course.grade(), course.trackStatus(), 
+                            track != null ? track.getTrackName() : "null");
                 } else {
                     notFoundCount++;
                     log.warn("과목을 찾을 수 없음: courseCode={}", course.code());
@@ -297,5 +320,28 @@ public class LoginService {
                 yield CompletedGrade.F;
             }
         };
+    }
+    
+    /**
+     * 과목의 trackStatus를 사용자의 Primary/Secondary 트랙으로 매핑
+     * "제1트랙" -> 사용자의 Primary 트랙
+     * "제2트랙" -> 사용자의 Secondary 트랙
+     * "" 또는 null -> null
+     */
+    private Track mapTrackStatusToUserTrack(String trackStatus, Track primaryTrack, Track secondaryTrack) {
+        if (trackStatus == null || trackStatus.trim().isEmpty()) {
+            return null;
+        }
+
+        // 이미 크롤링 서비스에서 정리된 트랙명을 받음
+        // "제1트랙", "제2트랙", "" 등의 형태
+        if ("제1트랙".equals(trackStatus)) {
+            return primaryTrack; // 사용자의 Primary 트랙 반환
+        } else if ("제2트랙".equals(trackStatus)) {
+            return secondaryTrack; // 사용자의 Secondary 트랙 반환
+        } else {
+            // 빈 문자열이거나 알 수 없는 경우 null 반환
+            return null;
+        }
     }
 }

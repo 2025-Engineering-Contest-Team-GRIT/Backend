@@ -100,11 +100,20 @@ public class UserAcademicInfoSyncService {
                             }
 
                             CompletedGrade gradeEnum = parseGradeFromString(courseGrade.grade());
+                            
+                            // 트랙 정보 파싱 (null일 수 있음)
+                            Track track = null;
+                            try {
+                                track = parseTrackFromTrackStatus(courseGrade.trackStatus());
+                            } catch (Exception e) {
+                                log.warn("트랙 파싱 실패: {}. null로 설정합니다.", e.getMessage());
+                            }
 
                             // CompletedCourse 엔티티 생성
                             return CompletedCourse.builder()
                                     .users(user)
                                     .course(course)
+                                    .track(track)
                                     .completedYear(parseYearFromSemesterString(semester.semester()))
                                     .gradeLevel(course.getOpenGrade()) // 이수학년은 과목의 개설학년으로 저장
                                     .completedSemester(parseSemesterFromSemesterString(semester.semester()))
@@ -174,5 +183,23 @@ public class UserAcademicInfoSyncService {
                 yield CompletedGrade.F;
             }
         };
+    }
+
+    private Track parseTrackFromTrackStatus(String trackStatus) {
+        if (trackStatus == null || trackStatus.trim().isEmpty()) {
+            log.warn("트랙 상태가 비어있습니다. null을 반환합니다.");
+            return null;
+        }
+
+        // 이미 크롤링 서비스에서 정리된 트랙명을 받음
+        // "제1트랙", "제2트랙", "" 등의 형태
+        if ("제1트랙".equals(trackStatus)) {
+            return trackRepository.findByTrackName("제1트랙").orElse(null);
+        } else if ("제2트랙".equals(trackStatus)) {
+            return trackRepository.findByTrackName("제2트랙").orElse(null);
+        } else {
+            // 빈 문자열이거나 알 수 없는 경우 null 반환
+            return null;
+        }
     }
 }
