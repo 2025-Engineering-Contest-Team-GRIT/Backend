@@ -2,6 +2,7 @@ package grit.guidance.domain.user.service;
 
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsersCrawlingService {
@@ -81,7 +83,16 @@ public class UsersCrawlingService {
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
 
         // 4. 결과 통합하여 반환
-        return new HansungDataResponse(userInfo, grades);
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades);
+        
+        // 5. 크롤링 결과 JSON 로그 출력
+        log.info("=== 크롤링 결과 JSON ===");
+        log.info("사용자 정보: {}", userInfo);
+        log.info("성적 정보: {}", grades);
+        log.info("전체 응답: {}", result);
+        log.info("========================");
+        
+        return result;
     }
 
     // --- 파싱 로직 (Python의 parser.py를 Jsoup으로 구현) ---
@@ -143,17 +154,56 @@ public class UsersCrawlingService {
             Elements rows = card.select("table.table_1 tbody tr");
             for (Element tr : rows) {
                 Elements tds = tr.select("td");
-                if (tds.size() >= 5) {
-                    if (tds.size() >= 6) { // 6칸 테이블
-                        courses.add(new CourseGradeResponse(tds.get(0).text().strip(), tds.get(1).text().strip(), tds.get(2).text().strip(), tds.get(3).text().strip(), tds.get(4).text().strip()));
-                    } else { // 5칸 테이블
-                        courses.add(new CourseGradeResponse(tds.get(0).text().strip(), tds.get(1).text().strip(), "", tds.get(2).text().strip(), tds.get(3).text().strip()));
-                    }
+                if (tds.size() >= 6) { // 6칸 테이블 (구분, 교과명, 교과코드, 학점, 성적, 현재트랙)
+                    String classification = tds.get(0).text().strip();
+                    String name = tds.get(1).text().strip();
+                    String code = tds.get(2).text().strip();
+                    String credits = tds.get(3).text().strip();
+                    String grade = tds.get(4).text().strip();
+                    String rawTrackStatus = tds.get(5).text().strip();
+                    String trackStatus = parseTrackStatus(rawTrackStatus);
+                    
+                    courses.add(new CourseGradeResponse(classification, name, code, credits, grade, trackStatus));
+                } else if (tds.size() >= 5) { // 5칸 테이블 (구분, 교과명, 학점, 성적, 현재트랙)
+                    String classification = tds.get(0).text().strip();
+                    String name = tds.get(1).text().strip();
+                    String code = ""; // 교과코드가 없는 경우
+                    String credits = tds.get(2).text().strip();
+                    String grade = tds.get(3).text().strip();
+                    String rawTrackStatus = tds.get(4).text().strip();
+                    String trackStatus = parseTrackStatus(rawTrackStatus);
+                    
+                    courses.add(new CourseGradeResponse(classification, name, code, credits, grade, trackStatus));
                 }
             }
             semesters.add(new SemesterGradeResponse(semesterName, semesterSummary, courses));
         }
 
         return new TotalGradeResponse(creditSummary, semesters);
+    }
+
+    /**
+     * 트랙 상태 문자열을 파싱하여 간단한 트랙명만 반환
+     * "현재 : 제1트랙 제2트랙변경시(전선)" -> "제1트랙"
+     * "현재 : 제2트랙" -> "제2트랙"
+     * "선필교(사회과학 분야)" -> ""
+     */
+    private String parseTrackStatus(String trackStatus) {
+        if (trackStatus == null || trackStatus.trim().isEmpty()) {
+            return "";
+        }
+
+        // "현재 : 제1트랙" 또는 "현재 : 제2트랙" 형태에서 트랙 번호 추출
+        if (trackStatus.startsWith("현재 : 제1트랙")) {
+            return "제1트랙";
+        } else if (trackStatus.startsWith("현재 : 제2트랙")) {
+            return "제2트랙";
+        } else if (trackStatus.contains("선필교") || trackStatus.contains("교필") || trackStatus.contains("일선")) {
+            // 교양 과목들은 빈 문자열 반환
+            return "";
+        } else {
+            // 알 수 없는 경우 빈 문자열 반환
+            return "";
+        }
     }
 }
