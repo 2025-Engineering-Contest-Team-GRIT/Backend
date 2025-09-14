@@ -1,6 +1,14 @@
 package grit.guidance.domain.user.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
+import grit.guidance.domain.course.entity.Course;
+import grit.guidance.domain.course.entity.Semester;
+import grit.guidance.domain.course.repository.CourseRepository;
+import grit.guidance.domain.user.entity.EnrolledCourse;
+import grit.guidance.domain.user.entity.Users;
+import grit.guidance.domain.user.repository.EnrolledCourseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -9,6 +17,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -25,9 +34,15 @@ import java.util.stream.Collectors;
 public class UsersCrawlingService {
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    private final CourseRepository courseRepository;
+    private final EnrolledCourseRepository enrolledCourseRepository;
 
     private static final String HANSUNG_INFO_URL = "https://info.hansung.ac.kr";
 
+    /**
+     * 한성대학교 데이터 크롤링 (기본 메서드)
+     */
     public HansungDataResponse fetchHansungData(String studentId, String password) throws Exception {
 
         // 1. 로그인 요청
@@ -82,15 +97,36 @@ public class UsersCrawlingService {
         String gradePageHtml = new String(gradePageResponse.getBody(), Charset.forName("euc-kr"));
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
 
-        // 4. 결과 통합하여 반환
-        HansungDataResponse result = new HansungDataResponse(userInfo, grades);
+        // 4. (신규) 현재 수강 과목(시간표) 크롤링
+        List<String> enrolledCourseNames = crawlEnrolledCourses(studentId, sessionCookie);
+
+        // 5. 결과 통합하여 반환
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades, enrolledCourseNames);
         
-        // 5. 크롤링 결과 JSON 로그 출력
+        // 6. 크롤링 결과 JSON 로그 출력
         log.info("=== 크롤링 결과 JSON ===");
         log.info("사용자 정보: {}", userInfo);
         log.info("성적 정보: {}", grades);
+        log.info("수강 과목: {}", enrolledCourseNames);
         log.info("전체 응답: {}", result);
         log.info("========================");
+        
+        return result;
+    }
+
+    /**
+     * 한성대학교 데이터 크롤링 및 수강 과목 저장 (사용자 정보 포함)
+     */
+    public HansungDataResponse fetchHansungDataAndSaveEnrolledCourses(
+            String studentId, String password, Users user, Integer currentYear, Semester currentSemester) throws Exception {
+        
+        // 기본 크롤링 수행
+        HansungDataResponse result = fetchHansungData(studentId, password);
+        
+        // 수강 과목 저장
+        if (result.enrolledCourseNames() != null && !result.enrolledCourseNames().isEmpty()) {
+            saveEnrolledCourses(user, result.enrolledCourseNames(), currentYear, currentSemester);
+        }
         
         return result;
     }
@@ -205,5 +241,94 @@ public class UsersCrawlingService {
             // 알 수 없는 경우 빈 문자열 반환
             return "";
         }
+    }
+
+    /**
+     * 현재 수강 중인 과목들을 시간표에서 크롤링하여 과목명 리스트를 반환
+     */
+    private List<String> crawlEnrolledCourses(String studentId, String sessionCookie) throws Exception {
+        String timetableDataUrl = HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_sigan_main_data.jsp";
+        
+        // 시간표 데이터 요청 헤더 설정
+        HttpHeaders timetableHeaders = new HttpHeaders();
+        timetableHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        timetableHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+        timetableHeaders.add(HttpHeaders.REFERER, HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_h_siganpyo.jsp");
+        
+        // 요청 본문 설정
+        MultiValueMap<String, String> timetableBody = new LinkedMultiValueMap<>();
+        timetableBody.add("as_hakbun", studentId);
+        
+        HttpEntity<MultiValueMap<String, String>> timetableRequest = new HttpEntity<>(timetableBody, timetableHeaders);
+
+        // POST 요청 실행
+        ResponseEntity<String> response = restTemplate.postForEntity(timetableDataUrl, timetableRequest, String.class);
+        String responseBody = response.getBody();
+
+        // 디버깅 로그
+        log.info("시간표 데이터 요청 결과: {}", responseBody);
+
+        // JSON 응답 파싱
+        List<TimetableEventDto> events = objectMapper.readValue(responseBody, new TypeReference<>() {});
+
+        return events.stream()
+                .map(TimetableEventDto::title)
+                .filter(title -> title != null && !title.trim().isEmpty())
+                .map(this::extractCourseName) // 과목명만 추출
+                .distinct()
+                .toList();
+    }
+
+    private String extractCourseName(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return "";
+        }
+        
+        // 개행문자(\n)로 분리하여 첫 번째 부분(과목명)만 추출
+        String[] parts = title.split("\n");
+        if (parts.length > 0) {
+            String courseName = parts[0].trim();
+            return courseName.replaceAll("\\([^)]*\\)", "").trim();
+        }
+        
+        return title.trim();
+    }
+
+    
+    //크롤링한 수강 과목들을 EnrolledCourse 엔티티에 저장
+    @Transactional
+    public void saveEnrolledCourses(Users user, List<String> enrolledCourseNames, Integer currentYear, Semester currentSemester) {
+        // 기존 수강 과목 데이터 삭제 (현재 학기)
+        enrolledCourseRepository.deleteByUser(user);
+        
+        int savedCount = 0;
+        int notFoundCount = 0;
+        
+        for (String courseName : enrolledCourseNames) {
+            // Course 엔티티에서 동일한 이름의 과목 찾기
+            var courseOpt = courseRepository.findByCourseName(courseName);
+            
+            if (courseOpt.isPresent()) {
+                Course course = courseOpt.get();
+                
+                // EnrolledCourse 엔티티 생성 및 저장
+                EnrolledCourse enrolledCourse = EnrolledCourse.builder()
+                        .user(user)
+                        .course(course)
+                        .enrolledYear(currentYear)
+                        .enrolledSemester(currentSemester)
+                        .build();
+                
+                enrolledCourseRepository.save(enrolledCourse);
+                savedCount++;
+                log.info("수강 과목 저장 완료: {} - {}", courseName, course.getCourseCode());
+            } else {
+                notFoundCount++;
+                log.warn("수강 과목을 DB에서 찾을 수 없음: {}", courseName);
+            }
+        }
+        
+        log.info("수강 과목 저장 완료 - 저장됨: {}, 찾을 수 없음: {}, 전체: {}", 
+                savedCount, notFoundCount, enrolledCourseNames.size());
     }
 }
