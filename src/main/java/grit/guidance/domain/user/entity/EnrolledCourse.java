@@ -32,18 +32,9 @@ public class EnrolledCourse extends BaseEntity {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @Column(name = "enrolled_year", nullable = false)
-    private Integer enrolledYear; // 수강 년도
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "enrolled_semester", nullable = false)
-    private Semester enrolledSemester; // 수강 학기
-
     @Builder
-    private EnrolledCourse(Users user, Course course, Integer enrolledYear, Semester enrolledSemester) {
+    private EnrolledCourse(Users user, Course course) {
         this.user = user;
         this.course = course;
-        this.enrolledYear = enrolledYear;
-        this.enrolledSemester = enrolledSemester;
     }
 }
