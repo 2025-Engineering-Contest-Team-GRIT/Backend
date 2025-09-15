@@ -1,5 +1,7 @@
 package grit.guidance.domain.user.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +27,19 @@ import java.util.stream.Collectors;
 public class UsersCrawlingService {
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     private static final String HANSUNG_INFO_URL = "https://info.hansung.ac.kr";
 
+    /**
+     * 한성대학교 데이터 크롤링 (기본 메서드)
+     */
     public HansungDataResponse fetchHansungData(String studentId, String password) throws Exception {
+        log.info("=== 크롤링 시작 ===");
+        log.info("학번: {}", studentId);
 
         // 1. 로그인 요청
+        log.info("1. 로그인 요청 시작");
         HttpHeaders loginHeaders = new HttpHeaders();
         loginHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -45,13 +54,17 @@ public class UsersCrawlingService {
                 loginRequest,
                 String.class
         );
+        log.info("로그인 응답 상태: {}", loginResponse.getStatusCode());
 
         // 로그인 성공 여부 확인 (ssotoken 쿠키 확인)
         List<String> cookies = loginResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+        log.info("로그인 쿠키: {}", cookies);
         if (cookies == null || cookies.stream().noneMatch(c -> c.contains("ssotoken"))) {
+            log.error("로그인 실패 - ssotoken 쿠키 없음");
             throw new IllegalArgumentException("로그인에 실패했습니다. 학번 또는 비밀번호를 확인해주세요.");
         }
         String sessionCookie = String.join("; ", cookies);
+        log.info("2. 로그인 성공, 세션 쿠키 획득");
 
         // 2. 메인 페이지 GET (사용자 정보 파싱용)
         HttpHeaders mainPageHeaders = new HttpHeaders();
@@ -82,18 +95,23 @@ public class UsersCrawlingService {
         String gradePageHtml = new String(gradePageResponse.getBody(), Charset.forName("euc-kr"));
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
 
-        // 4. 결과 통합하여 반환
-        HansungDataResponse result = new HansungDataResponse(userInfo, grades);
+        // 4. (신규) 현재 수강 과목(시간표) 크롤링
+        List<String> enrolledCourseNames = crawlEnrolledCourses(studentId, sessionCookie);
+
+        // 5. 결과 통합하여 반환
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades, enrolledCourseNames);
         
-        // 5. 크롤링 결과 JSON 로그 출력
+        // 6. 크롤링 결과 JSON 로그 출력
         log.info("=== 크롤링 결과 JSON ===");
         log.info("사용자 정보: {}", userInfo);
         log.info("성적 정보: {}", grades);
+        log.info("수강 과목: {}", enrolledCourseNames);
         log.info("전체 응답: {}", result);
         log.info("========================");
         
         return result;
     }
+
 
     // --- 파싱 로직 (Python의 parser.py를 Jsoup으로 구현) ---
 
@@ -205,5 +223,56 @@ public class UsersCrawlingService {
             // 알 수 없는 경우 빈 문자열 반환
             return "";
         }
+    }
+
+    /**
+     * 현재 수강 중인 과목들을 시간표에서 크롤링하여 과목명 리스트를 반환
+     */
+    private List<String> crawlEnrolledCourses(String studentId, String sessionCookie) throws Exception {
+        String timetableDataUrl = HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_sigan_main_data.jsp";
+        
+        // 시간표 데이터 요청 헤더 설정
+        HttpHeaders timetableHeaders = new HttpHeaders();
+        timetableHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        timetableHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+        timetableHeaders.add(HttpHeaders.REFERER, HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_h_siganpyo.jsp");
+        
+        // 요청 본문 설정
+        MultiValueMap<String, String> timetableBody = new LinkedMultiValueMap<>();
+        timetableBody.add("as_hakbun", studentId);
+        
+        HttpEntity<MultiValueMap<String, String>> timetableRequest = new HttpEntity<>(timetableBody, timetableHeaders);
+
+        // POST 요청 실행
+        ResponseEntity<String> response = restTemplate.postForEntity(timetableDataUrl, timetableRequest, String.class);
+        String responseBody = response.getBody();
+
+        // 디버깅 로그
+        log.info("시간표 데이터 요청 결과: {}", responseBody);
+
+        // JSON 응답 파싱
+        List<TimetableEventDto> events = objectMapper.readValue(responseBody, new TypeReference<>() {});
+
+        return events.stream()
+                .map(TimetableEventDto::title)
+                .filter(title -> title != null && !title.trim().isEmpty())
+                .map(this::extractCourseName) // 과목명만 추출
+                .distinct()
+                .toList();
+    }
+
+    private String extractCourseName(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return "";
+        }
+        
+        // 개행문자(\n)로 분리하여 첫 번째 부분(과목명)만 추출
+        String[] parts = title.split("\n");
+        if (parts.length > 0) {
+            String courseName = parts[0].trim();
+            return courseName.replaceAll("\\([^)]*\\)", "").trim();
+        }
+        
+        return title.trim();
     }
 }
