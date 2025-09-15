@@ -97,15 +97,20 @@ public class UsersCrawlingService {
 
         // 4. (신규) 현재 수강 과목(시간표) 크롤링
         List<String> enrolledCourseNames = crawlEnrolledCourses(studentId, sessionCookie);
-
-        // 5. 결과 통합하여 반환
-        HansungDataResponse result = new HansungDataResponse(userInfo, grades, enrolledCourseNames);
         
-        // 6. 크롤링 결과 JSON 로그 출력
+        // 5. 상세 시간표 데이터 크롤링
+        List<TimetableDetailDto> timetableEvents = crawlTimetableData(studentId, sessionCookie);
+        String timetableJson = objectMapper.writeValueAsString(timetableEvents);
+
+        // 6. 결과 통합하여 반환
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades, enrolledCourseNames, timetableJson);
+        
+        // 7. 크롤링 결과 JSON 로그 출력
         log.info("=== 크롤링 결과 JSON ===");
         log.info("사용자 정보: {}", userInfo);
         log.info("성적 정보: {}", grades);
         log.info("수강 과목: {}", enrolledCourseNames);
+        log.info("시간표 JSON: {}", timetableJson);
         log.info("전체 응답: {}", result);
         log.info("========================");
         
@@ -259,6 +264,86 @@ public class UsersCrawlingService {
                 .map(this::extractCourseName) // 과목명만 추출
                 .distinct()
                 .toList();
+    }
+
+    /**
+     * 시간표 데이터를 크롤링하여 상세한 TimetableDetailDto 리스트를 반환
+     */
+    private List<TimetableDetailDto> crawlTimetableData(String studentId, String sessionCookie) throws Exception {
+        String timetableDataUrl = HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_sigan_main_data.jsp";
+        
+        // 시간표 데이터 요청 헤더 설정
+        HttpHeaders timetableHeaders = new HttpHeaders();
+        timetableHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        timetableHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+        timetableHeaders.add(HttpHeaders.REFERER, HANSUNG_INFO_URL + "/jsp_21/student/kyomu/dae_h_siganpyo.jsp");
+        
+        // 요청 본문 설정
+        MultiValueMap<String, String> timetableBody = new LinkedMultiValueMap<>();
+        timetableBody.add("as_hakbun", studentId);
+        
+        HttpEntity<MultiValueMap<String, String>> timetableRequest = new HttpEntity<>(timetableBody, timetableHeaders);
+
+        // POST 요청 실행
+        ResponseEntity<String> response = restTemplate.postForEntity(timetableDataUrl, timetableRequest, String.class);
+        String responseBody = response.getBody();
+
+        // 디버깅 로그
+        log.info("시간표 데이터 요청 결과: {}", responseBody);
+
+        // JSON 응답 파싱
+        List<TimetableEventDto> rawEvents = objectMapper.readValue(responseBody, new TypeReference<>() {});
+        
+        // title을 파싱하여 과목명, 교수명, 강의실로 분리 (시간 정보는 빈 문자열로)
+        List<TimetableDetailDto> parsedEvents = rawEvents.stream()
+                .map(this::parseTimetableEventFromJson)
+                .toList();
+        
+        return parsedEvents;
+    }
+
+
+    /**
+     * JSON 응답에서 시간표 이벤트를 파싱하여 TimetableDetailDto로 변환
+     */
+    private TimetableDetailDto parseTimetableEventFromJson(TimetableEventDto event) {
+        if (event.title() == null || event.title().trim().isEmpty()) {
+            return new TimetableDetailDto(
+                "",
+                "",
+                "",
+                "",
+                ""
+            );
+        }
+        
+        // 개행문자(\n)로 분리
+        String[] parts = event.title().split("\n");
+        
+        String courseName = "";
+        String professorName = "";
+        String classroom = "";
+        
+        if (parts.length >= 1) {
+            // 과목명에서 괄호 부분 제거 (예: "설계패턴(C)" -> "설계패턴")
+            courseName = parts[0].trim().replaceAll("\\([^)]*\\)", "").trim();
+        }
+        
+        if (parts.length >= 2) {
+            professorName = parts[1].trim();
+        }
+        
+        if (parts.length >= 3) {
+            classroom = parts[2].trim();
+        }
+        
+        return new TimetableDetailDto(
+            courseName,
+            professorName,
+            classroom,
+            event.start() != null ? event.start() : "",
+            event.end() != null ? event.end() : ""
+        );
     }
 
     private String extractCourseName(String title) {

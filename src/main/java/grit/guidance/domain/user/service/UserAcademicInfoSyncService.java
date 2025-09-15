@@ -47,9 +47,14 @@ public class UserAcademicInfoSyncService {
             Users users = usersRepository.findByStudentId(studentId)
                     .orElseGet(() -> usersRepository.save(Users.builder().studentId(studentId).build()));
 
-            // 3. 사용자 정보(GPA) 업데이트
+            // 3. 사용자 정보(GPA, 취득학점, 시간표) 업데이트
             users.updateGpa(parseGpa(crawledData.grades().creditSummary()));
+            users.updateEarnedCredits(parseEarnedCredits(crawledData.grades().creditSummary()));
+            users.updateTimetable(crawledData.timetableJson());
+            users.updateLastCrawlTime();
             log.info("{} 학생의 GPA 정보를 {}로 업데이트했습니다.", users.getStudentId(), users.getGpa());
+            log.info("{} 학생의 취득학점을 {}로 업데이트했습니다.", users.getStudentId(), users.getEarnedCredits());
+            log.info("{} 학생의 시간표 정보를 업데이트했습니다.", users.getStudentId());
 
             // 4. 기존 이수 내역 및 트랙 정보 삭제 (최신 정보로 덮어쓰기 위해)
             completedCourseRepository.deleteByUsers(users);
@@ -135,6 +140,16 @@ public class UserAcademicInfoSyncService {
         } catch (NumberFormatException e) {
             log.warn("평균평점 '{}'을 숫자로 변환할 수 없습니다. 0.0으로 처리합니다.", gpaString);
             return BigDecimal.ZERO;
+        }
+    }
+
+    private Integer parseEarnedCredits(Map<String, String> creditSummary) {
+        String earnedCreditsString = creditSummary.getOrDefault("취득학점", "0");
+        try {
+            return Integer.parseInt(earnedCreditsString);
+        } catch (NumberFormatException e) {
+            log.warn("취득학점 '{}'을 숫자로 변환할 수 없습니다. 0으로 처리합니다.", earnedCreditsString);
+            return 0;
         }
     }
 

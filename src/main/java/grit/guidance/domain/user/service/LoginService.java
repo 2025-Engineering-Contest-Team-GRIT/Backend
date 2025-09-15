@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -113,20 +113,27 @@ public class LoginService {
         // 1. 사용자 트랙 정보 저장
         saveUserTracks(existingUser, hansungData.userInfo().tracks());
         
-        // 2. GPA 계산 및 저장
-        BigDecimal calculatedGpa = calculateGpa(hansungData.grades().semesters());
-        existingUser.updateGpa(calculatedGpa);
-        usersRepository.save(existingUser);
-        log.info("GPA 계산 완료: studentId={}, gpa={}", studentId, calculatedGpa);
+        // 2. GPA와 취득학점을 크롤링 데이터에서 직접 저장
+        BigDecimal gpa = parseGpaFromCreditSummary(hansungData.grades().creditSummary());
+        Integer earnedCredits = parseEarnedCreditsFromCreditSummary(hansungData.grades().creditSummary());
         
-        // 3. 완료된 과목들 저장
+        existingUser.updateGpa(gpa);
+        existingUser.updateEarnedCredits(earnedCredits);
+        
+        // 3. 시간표 JSON 저장
+        existingUser.updateTimetable(hansungData.timetableJson());
+        usersRepository.save(existingUser);
+        log.info("GPA 및 취득학점 저장 완료: studentId={}, gpa={}, earnedCredits={}", studentId, gpa, earnedCredits);
+        log.info("시간표 JSON 저장 완료: studentId={}", studentId);
+        
+        // 4. 완료된 과목들 저장
         saveCompletedCourses(existingUser, hansungData.grades().semesters());
 
         System.out.println(hansungData.enrolledCourseNames());
-        // 4. 수강 중인 과목들 저장
+        // 5. 수강 중인 과목들 저장
         saveEnrolledCourses(existingUser, hansungData.enrolledCourseNames());
         
-        // 5. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
+        // 6. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
         existingUser.updateLastCrawlTime(); // 크롤링 시간 업데이트
         existingUser = usersRepository.save(existingUser); // @LastModifiedDate 트리거
         log.info("사용자 크롤링 시간 업데이트 완료: studentId={}, lastCrawlTime={}, updatedAt={}", 
@@ -166,38 +173,29 @@ public class LoginService {
     }
     
     /**
-     * 모든 학기의 평점 평균을 계산하여 전체 GPA 계산
+     * 크롤링 데이터의 creditSummary에서 GPA 파싱
      */
-    private BigDecimal calculateGpa(List<SemesterGradeResponse> semesters) {
-        if (semesters == null || semesters.isEmpty()) {
+    private BigDecimal parseGpaFromCreditSummary(Map<String, String> creditSummary) {
+        String gpaString = creditSummary.getOrDefault("평균평점", "0.0");
+        try {
+            return new BigDecimal(gpaString);
+        } catch (NumberFormatException e) {
+            log.warn("평균평점 '{}'을 숫자로 변환할 수 없습니다. 0.0으로 처리합니다.", gpaString);
             return BigDecimal.ZERO;
         }
-        
-        BigDecimal totalGpa = BigDecimal.ZERO;
-        int semesterCount = 0;
-        
-        for (SemesterGradeResponse semester : semesters) {
-            // 학기 요약에서 "평점평균" 찾기
-            String gpaStr = semester.semesterSummary().get("평점평균");
-            if (gpaStr != null && !gpaStr.trim().isEmpty()) {
-                try {
-                    BigDecimal semesterGpa = new BigDecimal(gpaStr.trim());
-                    totalGpa = totalGpa.add(semesterGpa);
-                    semesterCount++;
-                    log.debug("학기 GPA 추가: semester={}, gpa={}", semester.semester(), semesterGpa);
-                } catch (NumberFormatException e) {
-                    log.warn("학기 GPA 파싱 실패: semester={}, gpaStr={}", semester.semester(), gpaStr);
-                }
-            }
+    }
+
+    /**
+     * 크롤링 데이터의 creditSummary에서 취득학점 파싱
+     */
+    private Integer parseEarnedCreditsFromCreditSummary(Map<String, String> creditSummary) {
+        String earnedCreditsString = creditSummary.getOrDefault("취득학점", "0");
+        try {
+            return Integer.parseInt(earnedCreditsString);
+        } catch (NumberFormatException e) {
+            log.warn("취득학점 '{}'을 숫자로 변환할 수 없습니다. 0으로 처리합니다.", earnedCreditsString);
+            return 0;
         }
-        
-        if (semesterCount == 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        BigDecimal averageGpa = totalGpa.divide(new BigDecimal(semesterCount), 2, RoundingMode.HALF_UP);
-        log.info("전체 GPA 계산 완료: totalGpa={}, semesterCount={}, averageGpa={}", totalGpa, semesterCount, averageGpa);
-        return averageGpa;
     }
     
     /**
