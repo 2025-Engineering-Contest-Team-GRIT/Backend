@@ -35,9 +35,10 @@ public class CourseService {
 
         try {
             // 주의: Track은 수동으로 넣었으므로 삭제하지 않음
-            trackRequirementRepository.deleteAllInBatch();
-            courseRepository.deleteAllInBatch();
-            log.info("기존 과목 및 이수 요건 데이터를 모두 삭제했습니다.");
+            // 소프트 딜리트를 위해 @Modifying @Query 사용
+            trackRequirementRepository.deleteAllSoft();
+            courseRepository.deleteAllSoft();
+            log.info("기존 과목 및 이수 요건 데이터를 모두 소프트 삭제했습니다.");
 
             // 1. JSON 파일 파싱
             ClassPathResource resource = new ClassPathResource("data/courses.json");
@@ -101,6 +102,7 @@ public class CourseService {
                             .openGrade(dto.getYear())
                             .openSemester(semester)
                             .credits(dto.getCredits())
+                            .description(dto.getDescription()) // 설명 필드 추가
                             .build();
                 })
                 .toList();

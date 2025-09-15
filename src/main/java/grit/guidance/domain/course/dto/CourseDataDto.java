@@ -16,5 +16,6 @@ public class CourseDataDto {
     private String name;
     private int credits;
     private String track;
+    private String description; // 과목 설명 추가
 
 }

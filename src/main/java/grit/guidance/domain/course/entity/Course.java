@@ -62,4 +62,11 @@ public class Course extends BaseEntity {
         this.openGrade = openGrade;
         this.openSemester = openSemester;
     }
+
+    /**
+     * 과목 설명 업데이트
+     */
+    public void updateDescription(String description) {
+        this.description = description;
+    }
 }
