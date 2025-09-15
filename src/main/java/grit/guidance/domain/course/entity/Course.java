@@ -35,6 +35,9 @@ public class Course extends BaseEntity {
     @Column(name = "credits", nullable = false)
     private Integer credits;
 
+    @Column(name = "course_type", nullable = false)
+    private String type;
+
     @Column(name = "course_description", columnDefinition = "TEXT")
     private String description;
 

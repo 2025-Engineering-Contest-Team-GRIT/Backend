@@ -1,18 +1,20 @@
 package grit.guidance.domain.graduation.service;
 
 import grit.guidance.domain.course.entity.Course;
+import grit.guidance.domain.course.entity.CourseType;
 import grit.guidance.domain.course.repository.CourseRepository;
 import grit.guidance.domain.graduation.dto.CertificationStatusDto;
 import grit.guidance.domain.graduation.dto.DashboardResponseDto;
 import grit.guidance.domain.graduation.dto.GraduationPlanRequestDto;
 import grit.guidance.domain.graduation.dto.TrackProgressDto;
-import grit.guidance.domain.user.entity.CompletedCourse; // Correct import for the entity
-import grit.guidance.domain.user.entity.GraduationRequirement; // Correct import for the entity
+import grit.guidance.domain.user.entity.CompletedCourse;
+import grit.guidance.domain.user.entity.GraduationRequirement;
 import grit.guidance.domain.user.entity.Users;
-import grit.guidance.domain.user.repository.CompletedCourseRepository; // Correct import for the repository
-import grit.guidance.domain.user.repository.GraduationRequirementRepository; // Correct import for the repository
+import grit.guidance.domain.user.repository.CompletedCourseRepository;
+import grit.guidance.domain.user.repository.GraduationRequirementRepository;
 import grit.guidance.domain.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -41,14 +44,9 @@ public class GraduationService {
         List<CompletedCourse> completedCourses = completedCourseRepository.findByUsers(user);
         GraduationRequirement requirement = graduationRequirementRepository.findByUsers(user)
                 .orElseThrow(() -> new IllegalArgumentException("졸업 요건 정보를 찾을 수 없습니다."));
-        /*
-        // 3. 총 이수 학점 계산
-        int totalCompletedCredits = completedCourses.stream()
-                .mapToInt(CompletedCourse::getCreditsEarned)
-                .sum();
 
-        // 4. 트랙별 학점 계산
-        // 이 로직은 CompletedCourse가 Course 엔티티를 가지고 있다는 가정하에 작성되었습니다.
+        // 3. 총 학점과 트랙별 학점을 한 번에 계산
+        int totalCompletedCredits = 0;
         int majorBasicsCredits = 0;
         int majorRequiredCredits = 0;
         int majorElectiveCredits = 0;
@@ -56,70 +54,82 @@ public class GraduationService {
 
         for (CompletedCourse cc : completedCourses) {
             if (cc.getCourse() != null) {
-                switch (cc.getCourse().getType()) {
-                    case "전공기초":
-                        majorBasicsCredits += cc.getCreditsEarned();
-                        break;
-                    case "전공필수":
-                        majorRequiredCredits += cc.getCreditsEarned();
-                        break;
-                    case "전공선택":
-                        majorElectiveCredits += cc.getCreditsEarned();
-                        break;
-                    case "교양":
-                        liberalArtsCredits += cc.getCreditsEarned();
-                        break;
+                // 총 학점 합산
+                totalCompletedCredits += cc.getCourse().getCredits();
+
+                // CourseType Enum으로 변환 후 switch문에서 사용
+                try {
+                    CourseType courseType = CourseType.valueOf(cc.getCourse().getType());
+                    switch (courseType) {
+                        case FOUNDATION:
+                            majorBasicsCredits += cc.getCourse().getCredits();
+                            break;
+                        case MANDATORY:
+                            majorRequiredCredits += cc.getCourse().getCredits();
+                            break;
+                        case ELECTIVE:
+                            majorElectiveCredits += cc.getCourse().getCredits();
+                            break;
+                        case GENERAL_ELECTIVE:
+                            liberalArtsCredits += cc.getCourse().getCredits();
+                            break;
+                    }
+                } catch (IllegalArgumentException e) {
+                    // Enum 변환 실패 시 로그 기록
+                    log.error("알 수 없는 과목 유형입니다: {}", cc.getCourse().getType(), e);
                 }
             }
         }
 
-        // TODO: ERD의 track_requirement 테이블을 사용하여 실제 필요 학점과 비교하는 로직을 추가해야 합니다.
-        // 현재는 예시 값으로 고정합니다.
+        // 4. 트랙별 학점 DTO 생성 (요구 학점은 임시값)
         List<TrackProgressDto> trackProgressList = new ArrayList<>();
         trackProgressList.add(TrackProgressDto.builder()
                 .trackName("전공기초")
+                .category("전공기초")   // category도 추가
                 .completedCredits(majorBasicsCredits)
                 .requiredCredits(3)
                 .build());
+
         trackProgressList.add(TrackProgressDto.builder()
                 .trackName("전공필수")
+                .category("전공필수")
                 .completedCredits(majorRequiredCredits)
                 .requiredCredits(15)
                 .build());
+
         trackProgressList.add(TrackProgressDto.builder()
                 .trackName("전공소계")
+                .category("전공소계")
                 .completedCredits(majorBasicsCredits + majorRequiredCredits + majorElectiveCredits)
                 .requiredCredits(39)
                 .build());
 
-        // 5. 졸업 인증 상태 계산
+        // 5. 졸업 인증 상태 DTO 생성
         List<CertificationStatusDto> certifications = new ArrayList<>();
         certifications.add(CertificationStatusDto.builder()
                 .certificationName("캡스톤디자인 발표회 작품 출품")
-                .isCompleted(requirement.isCapstoneCompleted())
+                .isCompleted(requirement.getCapstoneCompleted())
                 .build());
         certifications.add(CertificationStatusDto.builder()
                 .certificationName("졸업 논문")
-                .isCompleted(requirement.isFixedSubmitted())
+                .isCompleted(requirement.getThesisSubmitted()) // 메서드 이름 수정
                 .build());
         certifications.add(CertificationStatusDto.builder()
                 .certificationName("전공 관련 자격증/공모전 입상")
-                .isCompleted(requirement.isIsCertificateReceived())
+                .isCompleted(requirement.getAwardOrCertificateReceived()) // 메서드 이름 수정
                 .build());
 
-        // 6. DTO에 모든 정보 담아 반환
+        // 6. 모든 정보를 DTO에 담아 반환
         return DashboardResponseDto.builder()
                 .totalCompletedCredits(totalCompletedCredits)
-                .totalRequiredCredits(130) // TODO: 실제 총 필요 학점 로직으로 변경
+                .totalRequiredCredits(130)
                 .trackProgressList(trackProgressList)
                 .certifications(certifications)
                 .build();
-
-            */
-        return null;
     }
 
-    // 시뮬레이션 결과를 저장하는 메서드입니다.
+    // 시뮬레이션 결과를 저장하는
+    // 메서드입니다.
     @Transactional
     public void saveGraduationPlan(GraduationPlanRequestDto planDto) {
         // 실제 구현 로직은 다음과 같습니다.
