@@ -1,14 +1,11 @@
 package grit.guidance.domain.graduation.service;
 
+import grit.guidance.domain.user.entity.TrackType;
 import grit.guidance.domain.course.entity.Course;
-import grit.guidance.domain.course.entity.CourseType;
-import grit.guidance.domain.course.entity.TrackRequirement;
-import grit.guidance.domain.course.repository.TrackRequirementRepository;
 import grit.guidance.domain.graduation.dto.CertificationStatusDto;
 import grit.guidance.domain.graduation.dto.DashboardResponseDto;
 import grit.guidance.domain.graduation.dto.GraduationPlanRequestDto;
 import grit.guidance.domain.graduation.dto.TrackProgressDto;
-import grit.guidance.domain.user.dto.HansungDataResponse;
 import grit.guidance.domain.user.entity.CompletedCourse;
 import grit.guidance.domain.user.entity.GraduationRequirement;
 import grit.guidance.domain.user.entity.UserTrack;
@@ -34,21 +31,12 @@ public class GraduationService {
     private final UsersRepository usersRepository;
     private final CompletedCourseRepository completedCourseRepository;
     private final GraduationRequirementRepository graduationRequirementRepository;
-    private final TrackRequirementRepository trackRequirementRepository;
     private final UserTrackRepository userTrackRepository;
 
-    /**
-     * 대시보드 데이터 조회 (DB에 저장된 정보 활용)
-     *
-     * @param studentId 학생 학번
-     * @return 대시보드 응답 DTO
-     */
-    public DashboardResponseDto getDashboardData(String studentId) {
-        // 1. 사용자 조회
+    public DashboardResponseDto getDashboardData(String studentId) { // ⭐ HansungDataResponse 인자 제거
         Users user = usersRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
 
-        // 2. 이수 과목 & 졸업 요건 조회
         GraduationRequirement requirement = graduationRequirementRepository.findByUsers(user)
                 .orElse(GraduationRequirement.builder()
                         .users(user)
@@ -57,26 +45,21 @@ public class GraduationService {
                         .awardOrCertificateReceived(false)
                         .build());
 
-        // 3. 사용자 선택 트랙 조회 및 초기화
         List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
         List<String> orderedTrackNames = userTracks.stream()
                 .sorted((a, b) -> a.getTrackType().name().compareTo(b.getTrackType().name()))
                 .map(ut -> ut.getTrack().getTrackName())
                 .collect(Collectors.toList());
 
-        // 4. DB에 저장된 이수 과목 정보를 기반으로 학점 계산
         List<CompletedCourse> completedCourses = completedCourseRepository.findByUsers(user);
         Map<String, Integer> completedCreditsByTrack = new LinkedHashMap<>();
         Set<Long> countedCourseIds = new HashSet<>();
 
         for (CompletedCourse cc : completedCourses) {
             Course course = cc.getCourse();
-            // 과목이 이미 집계되었는지 확인
             if (countedCourseIds.contains(course.getId())) {
                 continue;
             }
-
-            // 이수 과목에 트랙 정보가 있으면 해당 트랙에 합산
             if (cc.getTrack() != null) {
                 String trackName = cc.getTrack().getTrackName();
                 if (orderedTrackNames.contains(trackName)) {
@@ -86,8 +69,7 @@ public class GraduationService {
             }
         }
 
-        // 5. 트랙별 진행 상황 DTO 생성
-        final int REQUIRED_PER_TRACK = 39; // 트랙별 요구 학점은 39로 고정
+        final int REQUIRED_PER_TRACK = 39;
         List<TrackProgressDto> trackProgressList = orderedTrackNames.stream()
                 .map(trackName -> {
                     int completed = completedCreditsByTrack.getOrDefault(trackName, 0);
@@ -104,20 +86,18 @@ public class GraduationService {
                 })
                 .collect(Collectors.toList());
 
-        // 6. 총 학점 계산
         int totalCompletedCredits = completedCourses.stream()
                 .mapToInt(cc -> cc.getCourse().getCredits())
                 .sum();
-        int totalRequiredCredits = 130; // 총 졸업 학점은 130으로 고정
 
-        // 7. 졸업 인증 상태
+        int totalRequiredCredits = 130;
+
         List<CertificationStatusDto> certifications = List.of(
                 CertificationStatusDto.builder().certificationName("캡스톤디자인 발표회 작품 출품").isCompleted(requirement.getCapstoneCompleted()).build(),
                 CertificationStatusDto.builder().certificationName("졸업 논문").isCompleted(requirement.getThesisSubmitted()).build(),
                 CertificationStatusDto.builder().certificationName("전공 관련 자격증/공모전 입상").isCompleted(requirement.getAwardOrCertificateReceived()).build()
         );
 
-        // 8. 결과 반환
         return DashboardResponseDto.builder()
                 .totalCompletedCredits(totalCompletedCredits)
                 .totalRequiredCredits(totalRequiredCredits)
@@ -126,11 +106,8 @@ public class GraduationService {
                 .build();
     }
 
-    /**
-     * 졸업 시뮬레이션 저장
-     */
     @Transactional
     public void saveGraduationPlan(GraduationPlanRequestDto planDto) {
-        // TODO: GraduationPlan & GraduationPlanCourse 저장 로직 작성
+        // ...
     }
 }

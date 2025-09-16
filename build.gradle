@@ -30,6 +30,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+
 	// REST API의 snake_case <-> camelCase 매핑 자동 처리
 	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
 
