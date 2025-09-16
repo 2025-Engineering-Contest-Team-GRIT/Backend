@@ -33,6 +33,9 @@ public class Users extends BaseEntity {
     @Column(name = "GPA", nullable = false, precision = 3, scale = 2)
     private BigDecimal gpa = BigDecimal.ZERO; // 0.0-4.5 범위
 
+    @Column(name = "earned_credits", nullable = false)
+    private Integer earnedCredits = 0; // 취득학점
+
     @Column(name = "timetable", columnDefinition = "TEXT")
     private String timetable; // JSON 형태의 시간표
 
@@ -56,9 +59,10 @@ public class Users extends BaseEntity {
     private List<FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    public Users(String studentId, BigDecimal gpa, String timetable, LocalDateTime lastCrawlTime) {
+    public Users(String studentId, BigDecimal gpa, Integer earnedCredits, String timetable, LocalDateTime lastCrawlTime) {
         this.studentId = studentId;
         this.gpa = gpa != null ? gpa : BigDecimal.ZERO;
+        this.earnedCredits = earnedCredits != null ? earnedCredits : 0;
         this.timetable = timetable;
         this.lastCrawlTime = lastCrawlTime;
     }
@@ -69,6 +73,13 @@ public class Users extends BaseEntity {
             throw new IllegalArgumentException("GPA는 0.0-4.5 범위여야 합니다.");
         }
         this.gpa = newGpa;
+    }
+
+    public void updateEarnedCredits(Integer earnedCredits) {
+        if (earnedCredits < 0) {
+            throw new IllegalArgumentException("취득학점은 0 이상이어야 합니다.");
+        }
+        this.earnedCredits = earnedCredits;
     }
 
     public void updateTimetable(String timetable) {

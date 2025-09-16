@@ -8,6 +8,7 @@ import grit.guidance.domain.course.repository.TrackRepository;
 import grit.guidance.domain.user.dto.*;
 import grit.guidance.domain.user.entity.*;
 import grit.guidance.domain.user.repository.CompletedCourseRepository;
+import grit.guidance.domain.user.repository.EnrolledCourseRepository;
 import grit.guidance.domain.user.repository.UsersRepository;
 import grit.guidance.domain.user.repository.UserTrackRepository;
 import grit.guidance.global.jwt.JwtService;
@@ -18,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -32,6 +33,7 @@ public class LoginService {
     private final UsersRepository usersRepository;
     private final UserTrackRepository userTrackRepository;
     private final CompletedCourseRepository completedCourseRepository;
+    private final EnrolledCourseRepository enrolledCourseRepository;
     private final CourseRepository courseRepository;
     private final TrackRepository trackRepository;
     private final JwtService jwtService;
@@ -111,16 +113,27 @@ public class LoginService {
         // 1. 사용자 트랙 정보 저장
         saveUserTracks(existingUser, hansungData.userInfo().tracks());
         
-        // 2. GPA 계산 및 저장
-        BigDecimal calculatedGpa = calculateGpa(hansungData.grades().semesters());
-        existingUser.updateGpa(calculatedGpa);
+        // 2. GPA와 취득학점을 크롤링 데이터에서 직접 저장
+        BigDecimal gpa = parseGpaFromCreditSummary(hansungData.grades().creditSummary());
+        Integer earnedCredits = parseEarnedCreditsFromCreditSummary(hansungData.grades().creditSummary());
+        
+        existingUser.updateGpa(gpa);
+        existingUser.updateEarnedCredits(earnedCredits);
+        
+        // 3. 시간표 JSON 저장
+        existingUser.updateTimetable(hansungData.timetableJson());
         usersRepository.save(existingUser);
-        log.info("GPA 계산 완료: studentId={}, gpa={}", studentId, calculatedGpa);
+        log.info("GPA 및 취득학점 저장 완료: studentId={}, gpa={}, earnedCredits={}", studentId, gpa, earnedCredits);
+        log.info("시간표 JSON 저장 완료: studentId={}", studentId);
         
-        // 3. 완료된 과목들 저장
+        // 4. 완료된 과목들 저장
         saveCompletedCourses(existingUser, hansungData.grades().semesters());
+
+        System.out.println(hansungData.enrolledCourseNames());
+        // 5. 수강 중인 과목들 저장
+        saveEnrolledCourses(existingUser, hansungData.enrolledCourseNames());
         
-        // 4. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
+        // 6. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
         existingUser.updateLastCrawlTime(); // 크롤링 시간 업데이트
         existingUser = usersRepository.save(existingUser); // @LastModifiedDate 트리거
         log.info("사용자 크롤링 시간 업데이트 완료: studentId={}, lastCrawlTime={}, updatedAt={}", 
@@ -160,38 +173,29 @@ public class LoginService {
     }
     
     /**
-     * 모든 학기의 평점 평균을 계산하여 전체 GPA 계산
+     * 크롤링 데이터의 creditSummary에서 GPA 파싱
      */
-    private BigDecimal calculateGpa(List<SemesterGradeResponse> semesters) {
-        if (semesters == null || semesters.isEmpty()) {
+    private BigDecimal parseGpaFromCreditSummary(Map<String, String> creditSummary) {
+        String gpaString = creditSummary.getOrDefault("평균평점", "0.0");
+        try {
+            return new BigDecimal(gpaString);
+        } catch (NumberFormatException e) {
+            log.warn("평균평점 '{}'을 숫자로 변환할 수 없습니다. 0.0으로 처리합니다.", gpaString);
             return BigDecimal.ZERO;
         }
-        
-        BigDecimal totalGpa = BigDecimal.ZERO;
-        int semesterCount = 0;
-        
-        for (SemesterGradeResponse semester : semesters) {
-            // 학기 요약에서 "평점평균" 찾기
-            String gpaStr = semester.semesterSummary().get("평점평균");
-            if (gpaStr != null && !gpaStr.trim().isEmpty()) {
-                try {
-                    BigDecimal semesterGpa = new BigDecimal(gpaStr.trim());
-                    totalGpa = totalGpa.add(semesterGpa);
-                    semesterCount++;
-                    log.debug("학기 GPA 추가: semester={}, gpa={}", semester.semester(), semesterGpa);
-                } catch (NumberFormatException e) {
-                    log.warn("학기 GPA 파싱 실패: semester={}, gpaStr={}", semester.semester(), gpaStr);
-                }
-            }
+    }
+
+    /**
+     * 크롤링 데이터의 creditSummary에서 취득학점 파싱
+     */
+    private Integer parseEarnedCreditsFromCreditSummary(Map<String, String> creditSummary) {
+        String earnedCreditsString = creditSummary.getOrDefault("취득학점", "0");
+        try {
+            return Integer.parseInt(earnedCreditsString);
+        } catch (NumberFormatException e) {
+            log.warn("취득학점 '{}'을 숫자로 변환할 수 없습니다. 0으로 처리합니다.", earnedCreditsString);
+            return 0;
         }
-        
-        if (semesterCount == 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        BigDecimal averageGpa = totalGpa.divide(new BigDecimal(semesterCount), 2, RoundingMode.HALF_UP);
-        log.info("전체 GPA 계산 완료: totalGpa={}, semesterCount={}, averageGpa={}", totalGpa, semesterCount, averageGpa);
-        return averageGpa;
     }
     
     /**
@@ -343,5 +347,43 @@ public class LoginService {
             // 빈 문자열이거나 알 수 없는 경우 null 반환
             return null;
         }
+    }
+    
+    /**
+     * 수강 중인 과목들 저장
+     */
+    private void saveEnrolledCourses(Users user, List<String> enrolledCourseNames) {
+        if (enrolledCourseNames == null || enrolledCourseNames.isEmpty()) {
+            log.info("수강 중인 과목이 없습니다: userId={}", user.getId());
+            return;
+        }
+        
+        log.info("수강 중인 과목 저장 시작: userId={}, enrolledCourseNames={}", user.getId(), enrolledCourseNames);
+        
+        // 기존 수강 과목 데이터 삭제
+        enrolledCourseRepository.deleteByUser(user);
+        
+        int savedCount = 0;
+        int notFoundCount = 0;
+        
+        for (String courseName : enrolledCourseNames) {
+            var courseOpt = courseRepository.findByCourseName(courseName);
+            if (courseOpt.isPresent()) {
+                Course course = courseOpt.get();
+                EnrolledCourse enrolledCourse = EnrolledCourse.builder()
+                        .user(user)
+                        .course(course)
+                        .build();
+                enrolledCourseRepository.save(enrolledCourse);
+                savedCount++;
+                log.info("수강 과목 저장 완료: {} - {}", courseName, course.getCourseCode());
+            } else {
+                notFoundCount++;
+                log.warn("수강 과목을 DB에서 찾을 수 없음: {}", courseName);
+            }
+        }
+        
+        log.info("수강 과목 저장 완료 - 저장됨: {}, 찾을 수 없음: {}, 전체: {}", 
+                savedCount, notFoundCount, enrolledCourseNames.size());
     }
 }

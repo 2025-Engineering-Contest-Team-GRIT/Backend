@@ -22,6 +22,7 @@ configurations {
 
 repositories {
 	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
@@ -34,8 +35,6 @@ dependencies {
 
 	// Jackson snake_case 지원
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
-	// REST API의 snake_case <-> camelCase 매핑 자동 처리
-	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
 
 	// Lombok
 	annotationProcessor 'org.projectlombok:lombok'
@@ -65,6 +64,13 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+	// 세션을 자동으로 관리하는 RestTemplate을 만들기 위해 필요
+	implementation 'org.apache.httpcomponents.client5:httpclient5'
+
+	// Spring AI 의존성 - Spring Milestone Repository에서 확인 후 추가
+	implementation 'org.springframework.ai:spring-ai-core:1.0.0-M2'
+	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M2'
+	implementation 'org.springframework.ai:spring-ai-qdrant-store-spring-boot-starter:1.0.0-M2'
 
 }
 
