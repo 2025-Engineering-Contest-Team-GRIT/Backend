@@ -21,18 +21,18 @@ public class GraduationPlanCourse extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "graduation_plan_course_id")
+    @Column(name = "graduation_plan_course_id") //졸업시뮬레이션 할 때 사용될 과목의 id
     private Long id;
 
     // 다대일 관계 - graduation_plan_course와 graduation_plan (단방향)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "graduation_plan_id", nullable = false)
-    private GraduationPlan graduationPlan;
+    private GraduationPlan graduationPlan; //졸업계획 id 와 연결
 
     // 다대일 관계 - graduation_plan_course와 course (단방향)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    private Course course; //course에서 id를 가져올 예정
 
     @Builder
     private GraduationPlanCourse(GraduationPlan graduationPlan, Course course) {

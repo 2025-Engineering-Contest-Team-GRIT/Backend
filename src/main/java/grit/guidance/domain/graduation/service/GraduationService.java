@@ -1,51 +1,136 @@
 package grit.guidance.domain.graduation.service;
 
+import grit.guidance.domain.course.entity.Course;
+import grit.guidance.domain.course.entity.CourseType;
+import grit.guidance.domain.course.entity.TrackRequirement;
+import grit.guidance.domain.course.repository.TrackRequirementRepository;
+import grit.guidance.domain.graduation.dto.CertificationStatusDto;
 import grit.guidance.domain.graduation.dto.DashboardResponseDto;
 import grit.guidance.domain.graduation.dto.GraduationPlanRequestDto;
-import grit.guidance.domain.graduation.entity.GraduationPlan;
-import grit.guidance.domain.graduation.repository.GraduationPlanRepository;
+import grit.guidance.domain.graduation.dto.TrackProgressDto;
+import grit.guidance.domain.user.dto.HansungDataResponse;
+import grit.guidance.domain.user.entity.CompletedCourse;
+import grit.guidance.domain.user.entity.GraduationRequirement;
+import grit.guidance.domain.user.entity.UserTrack;
+import grit.guidance.domain.user.entity.Users;
+import grit.guidance.domain.user.repository.CompletedCourseRepository;
+import grit.guidance.domain.user.repository.GraduationRequirementRepository;
+import grit.guidance.domain.user.repository.UserTrackRepository;
 import grit.guidance.domain.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GraduationService {
 
     private final UsersRepository usersRepository;
-    private final GraduationPlanRepository graduationPlanRepository;
+    private final CompletedCourseRepository completedCourseRepository;
+    private final GraduationRequirementRepository graduationRequirementRepository;
+    private final TrackRequirementRepository trackRequirementRepository;
+    private final UserTrackRepository userTrackRepository;
 
-    // 대시보드에 필요한 데이터를 조회하는 메서드입니다.
+    /**
+     * 대시보드 데이터 조회 (DB에 저장된 정보 활용)
+     *
+     * @param studentId 학생 학번
+     * @return 대시보드 응답 DTO
+     */
     public DashboardResponseDto getDashboardData(String studentId) {
-        // 실제 구현 로직은 다음과 같습니다.
-        // 1. usersRepository를 사용하여 studentId에 해당하는 사용자 정보를 가져옵니다.
-        // 2. completedCourseRepository를 사용하여 사용자가 이수한 과목 목록을 가져옵니다.
-        // 3. graduationRequirementRepository를 사용하여 사용자의 졸업 요건 정보를 가져옵니다.
-        // 4. 이 데이터를 바탕으로 총 학점, 트랙별 학점, 졸업 인증 상태 등을 계산합니다.
-        // 5. 계산된 정보를 DashboardResponseDto에 담아 반환합니다.
+        // 1. 사용자 조회
+        Users user = usersRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
 
-        // TODO: 위 로직을 여기에 직접 구현하세요. 아래는 예시 코드입니다.
+        // 2. 이수 과목 & 졸업 요건 조회
+        GraduationRequirement requirement = graduationRequirementRepository.findByUsers(user)
+                .orElse(GraduationRequirement.builder()
+                        .users(user)
+                        .capstoneCompleted(false)
+                        .thesisSubmitted(false)
+                        .awardOrCertificateReceived(false)
+                        .build());
+
+        // 3. 사용자 선택 트랙 조회 및 초기화
+        List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
+        List<String> orderedTrackNames = userTracks.stream()
+                .sorted((a, b) -> a.getTrackType().name().compareTo(b.getTrackType().name()))
+                .map(ut -> ut.getTrack().getTrackName())
+                .collect(Collectors.toList());
+
+        // 4. DB에 저장된 이수 과목 정보를 기반으로 학점 계산
+        List<CompletedCourse> completedCourses = completedCourseRepository.findByUsers(user);
+        Map<String, Integer> completedCreditsByTrack = new LinkedHashMap<>();
+        Set<Long> countedCourseIds = new HashSet<>();
+
+        for (CompletedCourse cc : completedCourses) {
+            Course course = cc.getCourse();
+            // 과목이 이미 집계되었는지 확인
+            if (countedCourseIds.contains(course.getId())) {
+                continue;
+            }
+
+            // 이수 과목에 트랙 정보가 있으면 해당 트랙에 합산
+            if (cc.getTrack() != null) {
+                String trackName = cc.getTrack().getTrackName();
+                if (orderedTrackNames.contains(trackName)) {
+                    completedCreditsByTrack.merge(trackName, course.getCredits(), Integer::sum);
+                    countedCourseIds.add(course.getId());
+                }
+            }
+        }
+
+        // 5. 트랙별 진행 상황 DTO 생성
+        final int REQUIRED_PER_TRACK = 39; // 트랙별 요구 학점은 39로 고정
+        List<TrackProgressDto> trackProgressList = orderedTrackNames.stream()
+                .map(trackName -> {
+                    int completed = completedCreditsByTrack.getOrDefault(trackName, 0);
+                    int required = REQUIRED_PER_TRACK;
+                    double progress = required > 0 ? (completed * 100.0) / required : 0;
+                    return TrackProgressDto.builder()
+                            .trackName(trackName)
+                            .category("트랙")
+                            .completedCredits(completed)
+                            .requiredCredits(required)
+                            .remainingCredits(Math.max(0, required - completed))
+                            .progressRate(progress)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // 6. 총 학점 계산
+        int totalCompletedCredits = completedCourses.stream()
+                .mapToInt(cc -> cc.getCourse().getCredits())
+                .sum();
+        int totalRequiredCredits = 130; // 총 졸업 학점은 130으로 고정
+
+        // 7. 졸업 인증 상태
+        List<CertificationStatusDto> certifications = List.of(
+                CertificationStatusDto.builder().certificationName("캡스톤디자인 발표회 작품 출품").isCompleted(requirement.getCapstoneCompleted()).build(),
+                CertificationStatusDto.builder().certificationName("졸업 논문").isCompleted(requirement.getThesisSubmitted()).build(),
+                CertificationStatusDto.builder().certificationName("전공 관련 자격증/공모전 입상").isCompleted(requirement.getAwardOrCertificateReceived()).build()
+        );
+
+        // 8. 결과 반환
         return DashboardResponseDto.builder()
-                .totalCompletedCredits(37)
-                .totalRequiredCredits(130)
-                .trackProgressList(null) // TODO: 실제 데이터로 채우기
-                .certifications(null)    // TODO: 실제 데이터로 채우기
+                .totalCompletedCredits(totalCompletedCredits)
+                .totalRequiredCredits(totalRequiredCredits)
+                .trackProgressList(trackProgressList)
+                .certifications(certifications)
                 .build();
     }
 
-    // 시뮬레이션 결과를 저장하는 메서드입니다.
+    /**
+     * 졸업 시뮬레이션 저장
+     */
     @Transactional
     public void saveGraduationPlan(GraduationPlanRequestDto planDto) {
-        // 실제 구현 로직은 다음과 같습니다.
-        // 1. usersRepository를 사용하여 planDto의 studentId에 해당하는 사용자 엔티티를 찾습니다.
-        // 2. GraduationPlanRequestDto의 정보로 GraduationPlan 엔티티를 생성합니다.
-        // 3. GraduationPlanRepository를 사용하여 이 엔티티를 데이터베이스에 저장합니다.
-        // 4. planDto의 selectedCourseCodes 목록을 순회하며, 각 과목에 대한
-        //    GraduationPlanCourse 엔티티를 생성하고 저장합니다.
-
-        // TODO: 위 로직을 여기에 직접 구현하세요.
-        System.out.println("계획 저장 로직 실행: " + planDto.getPlanName());
+        // TODO: GraduationPlan & GraduationPlanCourse 저장 로직 작성
     }
 }

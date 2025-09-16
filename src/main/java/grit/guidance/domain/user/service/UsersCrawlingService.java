@@ -31,6 +31,8 @@ public class UsersCrawlingService {
 
     private static final String HANSUNG_INFO_URL = "https://info.hansung.ac.kr";
 
+
+
     /**
      * 한성대학교 데이터 크롤링 (기본 메서드)
      */
@@ -95,6 +97,17 @@ public class UsersCrawlingService {
         String gradePageHtml = new String(gradePageResponse.getBody(), Charset.forName("euc-kr"));
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
 
+        // ⭐⭐ 새로 추가된 파싱 로직 호출 ⭐⭐
+        MajorRequiredCreditsResponse majorCredits = parseMajorRequiredCredits(Jsoup.parse(gradePageHtml));
+
+        // 4. 결과 통합하여 반환
+        HansungDataResponse result = new HansungDataResponse(userInfo, grades, majorCredits); // DTO에 majorCredits 필드 추가 필요
+
+        // 5. 크롤링 결과 JSON 로그 출력
+        log.info("=== 크롤링 결과 JSON ===");
+        log.info("사용자 정보: {}", userInfo);
+        log.info("성적 정보: {}", grades);
+        log.info("전공 이수 학점: {}", majorCredits); // 로그에 추가
         // 4. (신규) 현재 수강 과목(시간표) 크롤링
         List<String> enrolledCourseNames = crawlEnrolledCourses(studentId, sessionCookie);
         
@@ -113,12 +126,55 @@ public class UsersCrawlingService {
         log.info("시간표 JSON: {}", timetableJson);
         log.info("전체 응답: {}", result);
         log.info("========================");
-        
+
         return result;
     }
 
 
     // --- 파싱 로직 (Python의 parser.py를 Jsoup으로 구현) ---
+
+    private MajorRequiredCreditsResponse parseMajorRequiredCredits(Document doc) {
+        // 테이블 내의 특정 <td> 태그의 id를 이용해 값 추출
+        String majorBasic1 = getCreditValueById(doc, "my_jungi1");
+        String majorRequired1 = getCreditValueById(doc, "my_junji1");
+        String majorSubtotal1 = getCreditValueById(doc, "my_junhap1");
+
+        String majorBasic2 = getCreditValueById(doc, "my_jungi2");
+        String majorRequired2 = getCreditValueById(doc, "my_junji2");
+        String majorSubtotal2 = getCreditValueById(doc, "my_junhap2");
+
+        String totalCompleted = getCreditValueById(doc, "my_juntotal");
+        String totalRequired = getCreditRequiredValueById(doc, "standard_juntotal");
+
+        // DTO에 데이터를 담아 반환
+        return MajorRequiredCreditsResponse.builder()
+                .track1(MajorCreditDetail.builder()
+                        .majorBasic(majorBasic1)
+                        .majorRequired(majorRequired1)
+                        .majorSubtotal(majorSubtotal1)
+                        .build())
+                .track2(MajorCreditDetail.builder()
+                        .majorBasic(majorBasic2)
+                        .majorRequired(majorRequired2)
+                        .majorSubtotal(majorSubtotal2)
+                        .build())
+                .total(MajorCreditTotal.builder()
+                        .completed(totalCompleted)
+                        .required(totalRequired)
+                        .build())
+                .build();
+    }
+
+    private String getCreditValueById(Document doc, String id) {
+        Element element = doc.selectFirst("#" + id);
+        return (element != null) ? element.text().trim() : null;
+    }
+
+    // 총합계 필드는 괄호 안의 필수 학점도 함께 추출
+    private String getCreditRequiredValueById(Document doc, String id) {
+        Element element = doc.selectFirst("#" + id);
+        return (element != null) ? element.text().trim() : null;
+    }
 
     private UserInfoResponse parseUserInfoHtml(String html) {
         Document doc = Jsoup.parse(html);
