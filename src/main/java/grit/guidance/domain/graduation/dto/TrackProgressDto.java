@@ -1,13 +1,17 @@
 package grit.guidance.domain.graduation.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 @Builder
 public class TrackProgressDto {
-    private String trackName;           // 트랙 이름
-    private int completedCredits;      // 이수한 학점
-    private int requiredCredits;       // 필요 학점
-    private String category;            // 전공기초, 전공필수 등
+    private String trackName;
+    private String category;       // category 필드 추가
+    private int requiredCredits;
+    private int completedCredits;
+    private int remainingCredits;
+    private double progressRate;   // 퍼센트
 }

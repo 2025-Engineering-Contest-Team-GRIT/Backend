@@ -35,8 +35,10 @@ public class Course extends BaseEntity {
     @Column(name = "credits", nullable = false)
     private Integer credits;
 
+    // 새로 추가: CourseType 직접 저장
+    @Enumerated(EnumType.STRING)
     @Column(name = "course_type", nullable = false)
-    private String type;
+    private CourseType courseType;
 
     @Column(name = "course_description", columnDefinition = "TEXT")
     private String description;
@@ -57,12 +59,14 @@ public class Course extends BaseEntity {
     private List<grit.guidance.domain.user.entity.FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    private Course(String courseName, String courseCode,Integer credits, String description, Integer openGrade, Semester openSemester) {
+    private Course(String courseName, String courseCode, Integer credits, String description,
+                   Integer openGrade, Semester openSemester, CourseType courseType) {
         this.courseName = courseName;
         this.courseCode = courseCode;
         this.credits = credits;
         this.description = description;
         this.openGrade = openGrade;
         this.openSemester = openSemester;
+        this.courseType = courseType;
     }
 }
