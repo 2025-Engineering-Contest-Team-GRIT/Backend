@@ -9,13 +9,9 @@ import lombok.AllArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TrackProgressDto {
-    private String trackName;
-    private String category;
+public class DetailedCreditDto {
     private int completedCredits;
     private int requiredCredits;
     private int remainingCredits;
     private double progressRate;
-    private DetailedCreditDto majorBasic;
-    private DetailedCreditDto majorRequired;
 }

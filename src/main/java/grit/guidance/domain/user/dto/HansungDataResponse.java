@@ -6,9 +6,7 @@ import java.util.List;
 public record HansungDataResponse(
         UserInfoResponse userInfo,
         TotalGradeResponse grades,
-        MajorRequiredCreditsResponse majorCredits // 이 줄을 추가합니다.
-    UserInfoResponse userInfo, 
-    TotalGradeResponse grades, 
-    List<String> enrolledCourseNames,
-    String timetableJson
+        MajorRequiredCreditsResponse majorCredits, // 이 줄을 추가합니다.
+        List<String> enrolledCourseNames,
+        String timetableJson
 ) {}
