@@ -8,6 +8,7 @@ import grit.guidance.domain.graduation.dto.CertificationStatusDto;
 import grit.guidance.domain.graduation.dto.DashboardResponseDto;
 import grit.guidance.domain.graduation.dto.GraduationPlanRequestDto;
 import grit.guidance.domain.graduation.dto.TrackProgressDto;
+import grit.guidance.domain.user.dto.HansungDataResponse;
 import grit.guidance.domain.user.entity.CompletedCourse;
 import grit.guidance.domain.user.entity.GraduationRequirement;
 import grit.guidance.domain.user.entity.UserTrack;
@@ -37,7 +38,10 @@ public class GraduationService {
     private final UserTrackRepository userTrackRepository;
 
     /**
-     * 대시보드 데이터 조회
+     * 대시보드 데이터 조회 (DB에 저장된 정보 활용)
+     *
+     * @param studentId 학생 학번
+     * @return 대시보드 응답 DTO
      */
     public DashboardResponseDto getDashboardData(String studentId) {
         // 1. 사용자 조회
@@ -45,7 +49,6 @@ public class GraduationService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
 
         // 2. 이수 과목 & 졸업 요건 조회
-        List<CompletedCourse> completedCourses = completedCourseRepository.findByUsers(user);
         GraduationRequirement requirement = graduationRequirementRepository.findByUsers(user)
                 .orElse(GraduationRequirement.builder()
                         .users(user)
@@ -54,114 +57,67 @@ public class GraduationService {
                         .awardOrCertificateReceived(false)
                         .build());
 
-        // 3. 사용자 선택 트랙 조회 (PRIMARY/SECONDARY)
+        // 3. 사용자 선택 트랙 조회 및 초기화
         List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
-        // PRIMARY 우선, SECONDARY 다음 순서로 정렬
         List<String> orderedTrackNames = userTracks.stream()
                 .sorted((a, b) -> a.getTrackType().name().compareTo(b.getTrackType().name()))
                 .map(ut -> ut.getTrack().getTrackName())
                 .collect(Collectors.toList());
-        Set<String> selectedTrackNames = new LinkedHashSet<>(orderedTrackNames);
 
-        // 선택된 트랙이 없다면 전체 트랙 기준이 아닌 빈 결과로 처리
-        if (selectedTrackNames.isEmpty()) {
-            return DashboardResponseDto.builder()
-                    .totalCompletedCredits(0)
-                    .totalRequiredCredits(0)
-                    .trackProgressList(Collections.emptyList())
-                    .certifications(List.of(
-                            CertificationStatusDto.builder().certificationName("캡스톤디자인 발표회 작품 출품").isCompleted(requirement.getCapstoneCompleted()).build(),
-                            CertificationStatusDto.builder().certificationName("졸업 논문").isCompleted(requirement.getThesisSubmitted()).build(),
-                            CertificationStatusDto.builder().certificationName("전공 관련 자격증/공모전 입상").isCompleted(requirement.getAwardOrCertificateReceived()).build()
-                    ))
-                    .build();
-        }
-
-        // 4. 트랙 요구 사항 조회 (사용자 선택 트랙만 - 추론 용도)
-        List<TrackRequirement> trackRequirements = trackRequirementRepository.findAll().stream()
-                .filter(tr -> selectedTrackNames.contains(tr.getTrack().getTrackName()))
-                .collect(Collectors.toList());
-
-        // 4-1. 트랙별 요구 학점: 정책상 각 트랙 39학점 고정
-        final int REQUIRED_PER_TRACK = 39;
-        Map<String, Integer> requiredCreditsByTrack = selectedTrackNames.stream()
-                .collect(Collectors.toMap(name -> name, name -> REQUIRED_PER_TRACK, (a, b) -> a, LinkedHashMap::new));
-
-        // 5. 학생 이수 과목 → 트랙별 학점 매핑 (사용자 선택 트랙만)
+        // 4. DB에 저장된 이수 과목 정보를 기반으로 학점 계산
+        List<CompletedCourse> completedCourses = completedCourseRepository.findByUsers(user);
         Map<String, Integer> completedCreditsByTrack = new LinkedHashMap<>();
-        // 중복 집계를 방지하기 위한 과목 단위 집계 세트
         Set<Long> countedCourseIds = new HashSet<>();
+
         for (CompletedCourse cc : completedCourses) {
             Course course = cc.getCourse();
-            Long courseId = course.getId();
-            if (countedCourseIds.contains(courseId)) {
+            // 과목이 이미 집계되었는지 확인
+            if (countedCourseIds.contains(course.getId())) {
                 continue;
             }
-            // 우선 이수 과목에 명시된 트랙이 있으면 해당 트랙에만 합산
+
+            // 이수 과목에 트랙 정보가 있으면 해당 트랙에 합산
             if (cc.getTrack() != null) {
                 String trackName = cc.getTrack().getTrackName();
-                if (selectedTrackNames.contains(trackName)) {
+                if (orderedTrackNames.contains(trackName)) {
                     completedCreditsByTrack.merge(trackName, course.getCredits(), Integer::sum);
-                    countedCourseIds.add(courseId);
-                }
-                continue;
-            }
-
-            // 트랙 정보가 비어 있으면, 과목이 어떤 선택 트랙의 요건에 포함되는지로 추론하여 합산(최초로 매칭되는 트랙)
-            for (String candidateTrackName : orderedTrackNames) {
-                boolean belongsToCandidate = trackRequirements.stream()
-                        .anyMatch(tr -> Objects.equals(tr.getCourse().getId(), courseId)
-                                && tr.getTrack().getTrackName().equals(candidateTrackName));
-                if (belongsToCandidate) {
-                    completedCreditsByTrack.merge(candidateTrackName, course.getCredits(), Integer::sum);
-                    countedCourseIds.add(courseId);
-                    break;
+                    countedCourseIds.add(course.getId());
                 }
             }
-
         }
 
-        // 6. 트랙별 진행 상황 DTO 생성 (트랙당 최대 39학점 캡 적용)
-        List<TrackProgressDto> trackProgressList = requiredCreditsByTrack.entrySet().stream()
-                .map(entry -> {
-                    String trackName = entry.getKey();
-                    int required = entry.getValue();
-                    int completedRaw = completedCreditsByTrack.getOrDefault(trackName, 0);
-                    int completedCapped = Math.min(required, completedRaw);
-                    int remaining = Math.max(0, required - completedCapped);
-                    double progress = required == 0 ? 0 : (completedCapped * 100.0) / required;
+        // 5. 트랙별 진행 상황 DTO 생성
+        final int REQUIRED_PER_TRACK = 39; // 트랙별 요구 학점은 39로 고정
+        List<TrackProgressDto> trackProgressList = orderedTrackNames.stream()
+                .map(trackName -> {
+                    int completed = completedCreditsByTrack.getOrDefault(trackName, 0);
+                    int required = REQUIRED_PER_TRACK;
+                    double progress = required > 0 ? (completed * 100.0) / required : 0;
                     return TrackProgressDto.builder()
                             .trackName(trackName)
                             .category("트랙")
-                            .completedCredits(completedCapped)
+                            .completedCredits(completed)
                             .requiredCredits(required)
-                            .remainingCredits(remaining)
+                            .remainingCredits(Math.max(0, required - completed))
                             .progressRate(progress)
                             .build();
                 })
                 .collect(Collectors.toList());
 
-        // 7. 총 학점 계산 (선택 트랙 기준 합계)
-        int totalCompletedCredits = trackProgressList.stream().mapToInt(tp -> tp.getCompletedCredits()).sum();
-        int totalRequiredCredits = selectedTrackNames.size() * REQUIRED_PER_TRACK;
+        // 6. 총 학점 계산
+        int totalCompletedCredits = completedCourses.stream()
+                .mapToInt(cc -> cc.getCourse().getCredits())
+                .sum();
+        int totalRequiredCredits = 130; // 총 졸업 학점은 130으로 고정
 
-        // 8. 졸업 인증 상태
+        // 7. 졸업 인증 상태
         List<CertificationStatusDto> certifications = List.of(
-                CertificationStatusDto.builder()
-                        .certificationName("캡스톤디자인 발표회 작품 출품")
-                        .isCompleted(requirement.getCapstoneCompleted())
-                        .build(),
-                CertificationStatusDto.builder()
-                        .certificationName("졸업 논문")
-                        .isCompleted(requirement.getThesisSubmitted())
-                        .build(),
-                CertificationStatusDto.builder()
-                        .certificationName("전공 관련 자격증/공모전 입상")
-                        .isCompleted(requirement.getAwardOrCertificateReceived())
-                        .build()
+                CertificationStatusDto.builder().certificationName("캡스톤디자인 발표회 작품 출품").isCompleted(requirement.getCapstoneCompleted()).build(),
+                CertificationStatusDto.builder().certificationName("졸업 논문").isCompleted(requirement.getThesisSubmitted()).build(),
+                CertificationStatusDto.builder().certificationName("전공 관련 자격증/공모전 입상").isCompleted(requirement.getAwardOrCertificateReceived()).build()
         );
 
-        // 9. 결과 반환
+        // 8. 결과 반환
         return DashboardResponseDto.builder()
                 .totalCompletedCredits(totalCompletedCredits)
                 .totalRequiredCredits(totalRequiredCredits)
