@@ -119,4 +119,36 @@ public class GraduationService {
                 .certifications(certifications)
                 .build();
     }
-}
+
+
+
+        // ⭐ 졸업 요건 상태 업데이트 로직 구현
+        @Transactional
+        public void updateCertificationStatus(String studentId, String type, boolean isCompleted) {
+            Users user = usersRepository.findByStudentId(studentId)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
+
+            GraduationRequirement requirement = graduationRequirementRepository.findByUsers(user)
+                    .orElseThrow(() -> new IllegalStateException("졸업 요건 정보를 찾을 수 없습니다."));
+
+            switch (type) {
+                case "capstone":
+                    // ⭐ 메서드 이름 수정
+                    requirement.updateCapstoneStatus(isCompleted);
+                    break;
+                case "thesis":
+                    // ⭐ 메서드 이름 수정
+                    requirement.updateThesisStatus(isCompleted);
+                    break;
+                case "award":
+                    // ⭐ 메서드 이름 수정
+                    requirement.updateAwardStatus(isCompleted);
+                    break;
+                default:
+                    throw new IllegalArgumentException("유효하지 않은 졸업 요건 타입입니다: " + type);
+            }
+
+            graduationRequirementRepository.save(requirement); // 변경된 상태 저장
+            log.info("사용자 {}의 졸업 요건 '{}' 상태가 '{}'로 업데이트되었습니다.", studentId, type, isCompleted);
+        }
+    }
