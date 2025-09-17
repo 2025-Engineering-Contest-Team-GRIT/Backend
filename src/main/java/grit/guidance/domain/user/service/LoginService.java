@@ -5,6 +5,8 @@ import grit.guidance.domain.course.entity.Semester;
 import grit.guidance.domain.course.entity.Track;
 import grit.guidance.domain.course.repository.CourseRepository;
 import grit.guidance.domain.course.repository.TrackRepository;
+import grit.guidance.domain.graduation.entity.CrawlingGraduation;
+import grit.guidance.domain.graduation.repository.CrawlingGraduationRepository;
 import grit.guidance.domain.user.dto.*;
 import grit.guidance.domain.user.entity.*;
 import grit.guidance.domain.user.repository.CompletedCourseRepository;
@@ -38,6 +40,8 @@ public class LoginService {
     private final TrackRepository trackRepository;
     private final JwtService jwtService;
     private final CrawlingConditionService crawlingConditionService;
+    private final CrawlingGraduationRepository crawlingGraduationRepository; // ⭐ 추가: CrawlingGraduation 리포지토리
+
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -63,7 +67,8 @@ public class LoginService {
                 HansungDataResponse hansungData = crawlingService.fetchHansungData(studentId, password);
                 
                 // 5. 크롤링 성공 시 사용자 정보 저장/업데이트
-                saveOrUpdateUser(studentId, hansungData);
+                // saveOrUpdateUser(studentId, hansungData);
+                saveOrUpdateAllUserData(studentId, hansungData);
             } else {
                 log.info("크롤링 생략: studentId={}", studentId);
                 // 크롤링이 필요 없는 경우 기존 사용자 정보로 로그인 처리
@@ -86,7 +91,7 @@ public class LoginService {
         }
     }
 
-    @Transactional
+    /*@Transactional
     private void saveOrUpdateUser(String studentId, HansungDataResponse hansungData) {
         log.info("사용자 정보 저장/업데이트 시작: studentId={}", studentId);
         
@@ -140,6 +145,102 @@ public class LoginService {
                 studentId, existingUser.getLastCrawlTime(), existingUser.getUpdatedAt());
         
         log.info("사용자 정보 저장/업데이트 완료: studentId={}", studentId);
+    } */
+
+    @Transactional
+    public void saveOrUpdateAllUserData(String studentId, HansungDataResponse hansungData) {
+        log.info("사용자 정보 저장/업데이트 시작: studentId={}", studentId);
+
+        Users existingUser = usersRepository.findByStudentId(studentId).orElse(null);
+
+        if (existingUser != null) {
+            log.info("기존 사용자 정보 업데이트: userId={}", existingUser.getId());
+            completedCourseRepository.deleteByUsers(existingUser);
+            log.info("기존 완료된 과목들 삭제 완료: userId={}", existingUser.getId());
+            userTrackRepository.deleteByUsers(existingUser);
+            log.info("기존 트랙 정보 삭제 완료: userId={}", existingUser.getId());
+            // ⭐ 추가: 기존 수강 중인 과목들 삭제 로직 (만약 LoginService에 이 기능이 없었다면 추가)
+            // enrolledCourseRepository.deleteByUser(existingUser);
+        } else {
+            log.info("새 사용자 생성: studentId={}", studentId);
+            existingUser = Users.builder()
+                    .studentId(studentId)
+                    .gpa(BigDecimal.ZERO)
+                    .build();
+            existingUser = usersRepository.save(existingUser);
+        }
+
+        // 1. 사용자 트랙 정보 저장
+        saveUserTracks(existingUser, hansungData.userInfo().tracks());
+
+        // 2. GPA와 취득학점을 크롤링 데이터에서 직접 저장
+        BigDecimal gpa = parseGpaFromCreditSummary(hansungData.grades().creditSummary());
+        Integer earnedCredits = parseEarnedCreditsFromCreditSummary(hansungData.grades().creditSummary());
+
+        existingUser.updateGpa(gpa);
+        existingUser.updateEarnedCredits(earnedCredits);
+
+        // 3. 시간표 JSON 저장
+        existingUser.updateTimetable(hansungData.timetableJson());
+        usersRepository.save(existingUser);
+        log.info("GPA 및 취득학점 저장 완료: studentId={}, gpa={}, earnedCredits={}", studentId, gpa, earnedCredits);
+        log.info("시간표 JSON 저장 완료: studentId={}", studentId);
+
+        // 4. 완료된 과목들 저장
+        saveCompletedCourses(existingUser, hansungData.grades().semesters());
+
+        // 5. 수강 중인 과목들 저장
+        saveEnrolledCourses(existingUser, hansungData.enrolledCourseNames());
+
+        // ⭐ 6. 크롤링된 졸업 학점 정보 저장/업데이트 로직 추가
+        saveOrUpdateCrawlingGraduationData(existingUser, hansungData);
+
+        // 7. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
+        existingUser.updateLastCrawlTime();
+        existingUser = usersRepository.save(existingUser);
+        log.info("사용자 크롤링 시간 업데이트 완료: studentId={}, lastCrawlTime={}, updatedAt={}",
+                studentId, existingUser.getLastCrawlTime(), existingUser.getUpdatedAt());
+
+        log.info("사용자 정보 저장/업데이트 완료: studentId={}", studentId);
+    }
+
+    // ⭐ 새로 추가된 saveOrUpdateCrawlingGraduationData 메서드
+    @Transactional
+    private void saveOrUpdateCrawlingGraduationData(Users user, HansungDataResponse crawledData) {
+        MajorRequiredCreditsResponse majorCredits = crawledData.majorCredits();
+        Integer totalCompletedCredits = parseEarnedCreditsFromCreditSummary(crawledData.grades().creditSummary());
+
+        Optional<CrawlingGraduation> existingData = crawlingGraduationRepository.findByUsers(user);
+
+        if (existingData.isPresent()) {
+            CrawlingGraduation data = existingData.get();
+            data.updateCrawlingData(
+                    totalCompletedCredits,
+                    Integer.parseInt(majorCredits.getTrack1().getMajorBasic()),
+                    Integer.parseInt(majorCredits.getTrack1().getMajorRequired()),
+                    Integer.parseInt(majorCredits.getTrack1().getMajorSubtotal()),
+                    Integer.parseInt(majorCredits.getTrack2().getMajorBasic()),
+                    Integer.parseInt(majorCredits.getTrack2().getMajorRequired()),
+                    Integer.parseInt(majorCredits.getTrack2().getMajorSubtotal()),
+                    Integer.parseInt(majorCredits.getTotal().getCompleted()),
+                    Integer.parseInt(majorCredits.getTotal().getRequired().replaceAll("\\D", ""))
+            );
+        } else {
+            CrawlingGraduation newData = CrawlingGraduation.builder()
+                    .users(user)
+                    .totalCompletedCredits(totalCompletedCredits)
+                    .track1MajorBasic(Integer.parseInt(majorCredits.getTrack1().getMajorBasic()))
+                    .track1MajorRequired(Integer.parseInt(majorCredits.getTrack1().getMajorRequired()))
+                    .track1MajorSubtotal(Integer.parseInt(majorCredits.getTrack1().getMajorSubtotal()))
+                    .track2MajorBasic(Integer.parseInt(majorCredits.getTrack2().getMajorBasic()))
+                    .track2MajorRequired(Integer.parseInt(majorCredits.getTrack2().getMajorRequired()))
+                    .track2MajorSubtotal(Integer.parseInt(majorCredits.getTrack2().getMajorSubtotal()))
+                    .totalMajorCompleted(Integer.parseInt(majorCredits.getTotal().getCompleted()))
+                    .totalMajorRequired(Integer.parseInt(majorCredits.getTotal().getRequired().replaceAll("\\D", "")))
+                    .build();
+            crawlingGraduationRepository.save(newData);
+        }
+        log.info("{} 학생의 크롤링된 졸업 학점 정보를 저장/업데이트했습니다.", user.getStudentId());
     }
     
     /**
