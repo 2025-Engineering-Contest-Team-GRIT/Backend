@@ -1,5 +1,6 @@
 package grit.guidance.domain.course.controller;
 
+import grit.guidance.domain.course.entity.Course;
 import grit.guidance.domain.course.service.CourseService;
 import grit.guidance.domain.course.service.CourseDescriptionCrawlingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -20,6 +22,18 @@ public class CourseAdminController {
 
     private final CourseService courseService;
     private final CourseDescriptionCrawlingService crawlingService;
+
+    @GetMapping
+    @Operation(summary = "모든 과목 조회", description = "데이터베이스에 저장된 모든 과목을 조회합니다.")
+    public ResponseEntity<List<Course>> getAllCourses() {
+        try {
+            List<Course> courses = courseService.findAllCourses();
+            return ResponseEntity.ok(courses);
+        } catch (Exception e) {
+            log.error("과목 조회 실패", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
     @PostMapping("/reload")
     @Operation(summary = "과목 데이터 새로고침 및 설명 크롤링", description = "JSON 파일에서 과목 데이터를 읽어와 데이터베이스를 새로고침하고, 모든 과목의 설명을 크롤링하여 저장합니다.")

@@ -35,11 +35,6 @@ public class Course extends BaseEntity {
     @Column(name = "credits", nullable = false)
     private Integer credits;
 
-    // 새로 추가: CourseType 직접 저장
-    @Enumerated(EnumType.STRING)
-    @Column(name = "course_type", nullable = false)
-    private CourseType courseType;
-
     @Column(name = "course_description", columnDefinition = "TEXT")
     private String description;
 
@@ -60,14 +55,13 @@ public class Course extends BaseEntity {
 
     @Builder
     private Course(String courseName, String courseCode, Integer credits, String description,
-                   Integer openGrade, Semester openSemester, CourseType courseType) {
+                   Integer openGrade, Semester openSemester) {
         this.courseName = courseName;
         this.courseCode = courseCode;
         this.credits = credits;
         this.description = description;
         this.openGrade = openGrade;
         this.openSemester = openSemester;
-        this.courseType = courseType;
     }
 
     /**

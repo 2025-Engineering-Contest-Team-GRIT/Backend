@@ -29,6 +29,13 @@ public class CourseService {
     private final TrackRequirementRepository trackRequirementRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 모든 과목 조회
+     */
+    public List<Course> findAllCourses() {
+        return courseRepository.findAll();
+    }
+
     @Transactional
     public void initializeDatabaseFromJson() {
         log.info("관리자 요청으로 데이터베이스 초기화를 시작합니다...");
