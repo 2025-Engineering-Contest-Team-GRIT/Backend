@@ -1,21 +1,18 @@
 package grit.guidance.domain.graduation.dto;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrackProgressDto {
     private String trackName;
     private String category;
-    private int completedCredits;
-    private int requiredCredits;
-    private int remainingCredits;
-    private double progressRate;
     private DetailedCreditDto majorBasic;
     private DetailedCreditDto majorRequired;
+    private DetailedCreditDto majorSubtotal; // 기존 필드 대신 상세 DTO로 변경
 }
