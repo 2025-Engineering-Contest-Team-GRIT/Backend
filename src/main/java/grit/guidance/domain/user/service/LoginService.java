@@ -24,9 +24,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import grit.guidance.domain.user.repository.GraduationRequirementRepository;
-import grit.guidance.domain.user.repository.GraduationRequirementRepository;
-
+import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
+import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -207,7 +206,7 @@ public class LoginService {
         log.info("사용자 정보 저장/업데이트 완료: studentId={}", studentId);
     }
 
-    // ⭐ 새로 추가된 saveOrUpdateCrawlingGraduationData 메서드
+
     @Transactional
     public void saveOrUpdateCrawlingGraduationData(Users user, HansungDataResponse crawledData) {
         MajorRequiredCreditsResponse majorCredits = crawledData.majorCredits();

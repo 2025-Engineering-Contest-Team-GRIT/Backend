@@ -30,8 +30,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import grit.guidance.domain.user.entity.TrackType;
 import grit.guidance.domain.graduation.repository.CrawlingGraduationRepository;
-import grit.guidance.domain.user.repository.GraduationRequirementRepository;
-
+import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
+import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -77,7 +77,7 @@ public class UserAcademicInfoSyncService {
 
             // 6. 새로 크롤링한 이수 과목 정보 저장
             saveCompletedCourses(users, crawledData.grades().semesters());
-
+            saveGraduationRequirement(users);
 
             // ⭐ CrawlingGraduation 저장 로직 추가
             saveOrUpdateCrawlingGraduationData(users, crawledData);
@@ -131,6 +131,21 @@ public class UserAcademicInfoSyncService {
             crawlingGraduationRepository.save(newData);
         }
         log.info("{} 학생의 크롤링된 졸업 학점 정보를 저장/업데이트했습니다.", user.getStudentId());
+    }
+
+    // ⭐ GraduationRequirement 객체를 생성하고 저장하는 메소드
+    @Transactional
+    public void saveGraduationRequirement(Users user) {
+        // 이미 해당 사용자의 졸업 요건이 있다면 새로 만들지 않음
+        if (graduationRequirementRepository.findByUsers(user).isEmpty()) {
+            GraduationRequirement newRequirement = GraduationRequirement.builder()
+                    .users(user)
+                    .capstoneCompleted(false)
+                    .thesisSubmitted(false)
+                    .awardOrCertificateReceived(false)
+                    .build();
+            graduationRequirementRepository.save(newRequirement);
+        }
     }
 
     // ⭐ GraduationRequirement 저장/업데이트 메서드
@@ -295,6 +310,8 @@ public class UserAcademicInfoSyncService {
             }
         };
     }
+
+
 
     // ⭐⭐ 새로 추가된 로직: "제1트랙"을 실제 트랙 이름으로 변환 ⭐⭐
     private String getActualTrackNameFromStatus(String studentId, String trackStatus) {
