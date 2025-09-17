@@ -43,7 +43,7 @@ public class QdrantRepository {
             }
             return vector;
         } catch (Exception e) {
-            System.err.println("❌ 벡터 생성 실패: " + e.getMessage());
+            System.err.println("벡터 생성 실패: " + e.getMessage());
             // 기본 벡터 반환
             List<Double> vector = new ArrayList<>();
             for (int i = 0; i < 1536; i++) {
@@ -85,13 +85,13 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 저장 성공: " + id);
+                System.out.println("Qdrant 직접 저장 성공: " + id);
             } else {
-                System.err.println("❌ Qdrant 저장 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 저장 실패: " + response.getStatusCode());
             }
             
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 저장 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 저장 실패: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -137,13 +137,13 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 일괄 저장 성공: " + documents.size() + "개 문서");
+                System.out.println("Qdrant 직접 일괄 저장 성공: " + documents.size() + "개 문서");
             } else {
-                System.err.println("❌ Qdrant 일괄 저장 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 일괄 저장 실패: " + response.getStatusCode());
             }
             
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 일괄 저장 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 일괄 저장 실패: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -190,12 +190,12 @@ public class QdrantRepository {
                         })
                         .toList();
             } else {
-                System.err.println("❌ Qdrant 검색 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 검색 실패: " + response.getStatusCode());
                 return List.of();
             }
                     
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 검색 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 검색 실패: " + e.getMessage());
             e.printStackTrace();
             return List.of();
         }
@@ -234,14 +234,14 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 문서 삭제 성공: " + courseId);
+                System.out.println("Qdrant 직접 문서 삭제 성공: " + courseId);
                 return true;
             } else {
-                System.err.println("❌ Qdrant 문서 삭제 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 문서 삭제 실패: " + response.getStatusCode());
                 return false;
             }
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 문서 삭제 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 문서 삭제 실패: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -264,14 +264,14 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 " + courseIds.size() + "개 문서 삭제 성공");
+                System.out.println("Qdrant 직접 " + courseIds.size() + "개 문서 삭제 성공");
                 return true;
             } else {
-                System.err.println("❌ Qdrant 일괄 삭제 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 일괄 삭제 실패: " + response.getStatusCode());
                 return false;
             }
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 일괄 삭제 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 일괄 삭제 실패: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -294,14 +294,14 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 전체 삭제 성공");
+                System.out.println("Qdrant 직접 전체 삭제 성공");
                 return true;
             } else {
-                System.err.println("❌ Qdrant 전체 삭제 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 전체 삭제 실패: " + response.getStatusCode());
                 return false;
             }
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 전체 삭제 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 전체 삭제 실패: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -316,7 +316,7 @@ public class QdrantRepository {
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
             return response.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 상태 확인 실패: " + e.getMessage());
+            System.err.println("Qdrant 상태 확인 실패: " + e.getMessage());
             return false;
         }
     }
@@ -337,7 +337,7 @@ public class QdrantRepository {
             }
             return 0L;
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 문서 개수 확인 실패: " + e.getMessage());
+            System.err.println("Qdrant 문서 개수 확인 실패: " + e.getMessage());
             return -1L;
         }
     }
