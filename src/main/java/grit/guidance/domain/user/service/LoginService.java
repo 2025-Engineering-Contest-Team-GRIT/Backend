@@ -24,8 +24,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-
+import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
+import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,7 +41,7 @@ public class LoginService {
     private final JwtService jwtService;
     private final CrawlingConditionService crawlingConditionService;
     private final CrawlingGraduationRepository crawlingGraduationRepository; // ⭐ 추가: CrawlingGraduation 리포지토리
-
+    private final GraduationRequirementRepository graduationRequirementRepository;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -194,6 +194,8 @@ public class LoginService {
 
         // ⭐ 6. 크롤링된 졸업 학점 정보 저장/업데이트 로직 추가
         saveOrUpdateCrawlingGraduationData(existingUser, hansungData);
+        // ⭐ 졸업 요건 정보 저장 또는 업데이트
+        saveOrUpdateGraduationRequirement(existingUser);
 
         // 7. 사용자 lastCrawlTime과 updatedAt을 현재 시간으로 업데이트
         existingUser.updateLastCrawlTime();
@@ -204,9 +206,9 @@ public class LoginService {
         log.info("사용자 정보 저장/업데이트 완료: studentId={}", studentId);
     }
 
-    // ⭐ 새로 추가된 saveOrUpdateCrawlingGraduationData 메서드
+
     @Transactional
-    private void saveOrUpdateCrawlingGraduationData(Users user, HansungDataResponse crawledData) {
+    public void saveOrUpdateCrawlingGraduationData(Users user, HansungDataResponse crawledData) {
         MajorRequiredCreditsResponse majorCredits = crawledData.majorCredits();
         Integer totalCompletedCredits = parseEarnedCreditsFromCreditSummary(crawledData.grades().creditSummary());
 
@@ -242,7 +244,21 @@ public class LoginService {
         }
         log.info("{} 학생의 크롤링된 졸업 학점 정보를 저장/업데이트했습니다.", user.getStudentId());
     }
-    
+
+
+    @Transactional
+    public void saveOrUpdateGraduationRequirement(Users user) {
+        if (graduationRequirementRepository.findByUsers(user).isEmpty()) {
+            GraduationRequirement newRequirement = GraduationRequirement.builder()
+                    .users(user)
+                    .capstoneCompleted(false)
+                    .thesisSubmitted(false)
+                    .awardOrCertificateReceived(false)
+                    .build();
+            graduationRequirementRepository.save(newRequirement);
+            log.info("{} 학생의 졸업 요건 정보를 새로 생성했습니다.", user.getStudentId());
+        }
+    }
     /**
      * 사용자 트랙 정보 저장
      */
