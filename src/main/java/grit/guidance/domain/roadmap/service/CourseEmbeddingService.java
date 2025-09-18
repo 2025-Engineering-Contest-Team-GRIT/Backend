@@ -285,7 +285,18 @@ public class CourseEmbeddingService {
             // 5. Qdrant에서 트랙 필터링된 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCoursesWithFilter(
                     searchQuery, 30, trackNames);
-            log.info("Qdrant 검색 결과: {}개", searchResults.size());
+            log.info(" Qdrant 검색 결과: {}개", searchResults.size());
+            
+            // Qdrant 검색 결과 상세 로그
+            log.info("Qdrant 검색 결과 상세 (전체 {}개):", searchResults.size());
+            for (int i = 0; i < searchResults.size(); i++) { // 전체 결과 로그
+                Map<String, Object> course = searchResults.get(i);
+                log.info("  {}. {} ({}) - 유사도: {}", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("score"));
+            }
             
             // 6. 이수/수강중인 과목 제외
             List<Map<String, Object>> recommendedCourses = new ArrayList<>();
@@ -320,7 +331,21 @@ public class CourseEmbeddingService {
                 recommendedCourses.add(course);
             }
 
-            log.info("2단계: 벡터 DB 검색 완료 - {}개 과목 (트랙 필터링 후)", recommendedCourses.size());
+            log.info("2단계: 벡터 DB 검색 완료 - {}개 과목 (이수/수강중인 과목 제외 후)", recommendedCourses.size());
+            
+            // 최종 추천 과목 상세 로그
+            log.info("🎯 최종 추천 과목 목록:");
+            for (int i = 0; i < recommendedCourses.size(); i++) {
+                Map<String, Object> course = recommendedCourses.get(i);
+                log.info("  {}. {} ({}) - {}학년 {}학기 - 유사도: {}", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("openGrade"),
+                    course.get("openSemester"),
+                    course.get("score"));
+            }
+            
             return recommendedCourses;
 
         } catch (Exception e) {

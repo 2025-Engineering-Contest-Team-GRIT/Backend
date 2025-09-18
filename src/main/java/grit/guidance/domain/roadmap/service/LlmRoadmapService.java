@@ -38,8 +38,33 @@ public class LlmRoadmapService {
             Map<String, Object> semesterInfo) {
         
         try {
-            log.info("LLM 로드맵 추천 요청 시작 - studentId: {}, trackIds: {}, mandatory: {}개, recommended: {}개",
+            log.info("🤖 LLM 로드맵 추천 요청 시작 - studentId: {}, trackIds: {}, mandatory: {}개, recommended: {}개",
                     studentId, trackIds, mandatoryCourses.size(), recommendedCourses.size());
+
+            // LLM에게 보낼 데이터 상세 로그
+            log.info("📤 LLM에게 보낼 필수 과목 목록 ({}개):", mandatoryCourses.size());
+            for (int i = 0; i < mandatoryCourses.size(); i++) {
+                Map<String, Object> course = mandatoryCourses.get(i);
+                log.info("  {}. {} ({}) - {} [{}학년 {}학기]", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("courseType"),
+                    course.get("openGrade"),
+                    course.get("openSemester"));
+            }
+            
+            log.info("📤 LLM에게 보낼 추천 과목 목록 ({}개):", recommendedCourses.size());
+            for (int i = 0; i < recommendedCourses.size(); i++) {
+                Map<String, Object> course = recommendedCourses.get(i);
+                log.info("  {}. {} ({}) - {}학년 {}학기 - 유사도: {}", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("openGrade"),
+                    course.get("openSemester"),
+                    course.get("score"));
+            }
 
             // 프롬프트 생성 (학기 정보 포함)
             String prompt = buildPrompt(mandatoryCourses, recommendedCourses, techStack, semesterInfo);
