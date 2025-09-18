@@ -268,19 +268,40 @@ public class CourseEmbeddingService {
             List<Long> completedCourseIds = completedCourseRepository.findCourseIdsByUserId(user.getId());
             List<Long> enrolledCourseIds = enrolledCourseRepository.findCourseIdsByUserId(user.getId());
             
-            // 3. 검색 쿼리 생성 (tech_stack 우선, 없으면 기본 쿼리)
-            String searchQuery;
-            if (advancedSettings != null && advancedSettings.getTechStack() != null && !advancedSettings.getTechStack().trim().isEmpty()) {
-                searchQuery = advancedSettings.getTechStack();
-                log.info("Tech Stack 기반 검색: {}", searchQuery);
-            } else {
-                searchQuery = "프로그래밍 개발"; // 기본 검색 쿼리
-                log.info("기본 검색 쿼리 사용: {}", searchQuery);
+            // 3. 트랙 정보 조회 (1트랙, 2트랙 구분)
+            List<String> trackNames = getTrackNamesByIds(trackIds);
+            String primaryTrack = trackNames.size() > 0 ? trackNames.get(0) : null;
+            String secondaryTrack = trackNames.size() > 1 ? trackNames.get(1) : null;
+            
+            log.info("트랙 정보 - 1트랙: {}, 2트랙: {}", primaryTrack, secondaryTrack);
+            
+            // 4. 검색 쿼리 생성 (1트랙 + 2트랙 + tech_stack 조합, 가중치 적용)
+            StringBuilder searchQueryBuilder = new StringBuilder();
+            
+            // 1트랙 추가 (가중치 높음 - 2번 반복)
+            if (primaryTrack != null) {
+                searchQueryBuilder.append(primaryTrack).append(" ").append(primaryTrack).append(" ");
+                log.info("1트랙 (가중치 높음): {}", primaryTrack);
             }
             
-            // 4. 트랙 이름 목록 조회 (Qdrant 필터링용)
-            List<String> trackNames = getTrackNamesByIds(trackIds);
-            log.info("트랙 필터링: {}", trackNames);
+            // 2트랙 추가 (가중치 중간)
+            if (secondaryTrack != null) {
+                searchQueryBuilder.append(secondaryTrack).append(" ");
+                log.info("2트랙 (가중치 중간): {}", secondaryTrack);
+            }
+            
+            // tech_stack 추가 (가중치 높음 - 2번 반복)
+            if (advancedSettings != null && advancedSettings.getTechStack() != null && !advancedSettings.getTechStack().trim().isEmpty()) {
+                String techStack = advancedSettings.getTechStack().trim();
+                searchQueryBuilder.append(techStack).append(" ").append(techStack);
+                log.info("Tech Stack (가중치 높음): {}", techStack);
+            } else {
+                searchQueryBuilder.append("프로그래밍 개발"); // 기본 검색 쿼리
+                log.info("기본 검색 쿼리 사용: 프로그래밍 개발");
+            }
+            
+            String searchQuery = searchQueryBuilder.toString().trim();
+            log.info("통합 검색 쿼리 (가중치 적용): {}", searchQuery);
             
             // 5. Qdrant에서 트랙 필터링된 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCoursesWithFilter(
@@ -334,7 +355,7 @@ public class CourseEmbeddingService {
             log.info("2단계: 벡터 DB 검색 완료 - {}개 과목 (이수/수강중인 과목 제외 후)", recommendedCourses.size());
             
             // 최종 추천 과목 상세 로그
-            log.info("🎯 최종 추천 과목 목록:");
+            log.info("최종 추천 과목 목록:");
             for (int i = 0; i < recommendedCourses.size(); i++) {
                 Map<String, Object> course = recommendedCourses.get(i);
                 log.info("  {}. {} ({}) - {}학년 {}학기 - 유사도: {}", 
@@ -369,6 +390,7 @@ public class CourseEmbeddingService {
             return new ArrayList<>();
         }
     }
+
     
     /**
      * 주어진 트랙들에 속하는 모든 과목 ID 목록 조회
