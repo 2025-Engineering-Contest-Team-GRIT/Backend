@@ -46,6 +46,8 @@ dependencies {
 
 	// DataBase
 	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'
+	testRuntimeOnly 'com.h2database:h2'
 
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -56,7 +58,7 @@ dependencies {
 	implementation 'org.jsoup:jsoup:1.17.2'
 
 	// .env 파일을 사용하기 위한 라이브러리
-	testImplementation 'io.github.cdimascio:java-dotenv:5.2.2'
+	implementation 'io.github.cdimascio:java-dotenv:5.2.2'
 
 	// JWT 토큰 생성
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'

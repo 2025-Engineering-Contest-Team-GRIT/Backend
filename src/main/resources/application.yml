@@ -3,6 +3,16 @@ spring:
     name: session
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+
+# OpenAI API 설정
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    url: ${OPENAI_API_URL:https://api.openai.com}
 
   jackson:
     property-naming-strategy: SNAKE_CASE
