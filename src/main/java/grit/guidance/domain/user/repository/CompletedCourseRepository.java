@@ -24,5 +24,9 @@ public interface CompletedCourseRepository extends JpaRepository<CompletedCourse
     // 중복 체크: 사용자, 과목, 연도, 학기가 모두 같은 완료 과목이 있는지 확인
     boolean existsByUsersAndCourseAndCompletedYearAndCompletedSemester(
         Users user, Course course, int completedYear, Semester completedSemester);
+    
+    // 사용자 ID로 이수한 과목 ID 목록 조회
+    @Query("SELECT cc.course.id FROM CompletedCourse cc WHERE cc.users.id = :userId")
+    List<Long> findCourseIdsByUserId(@Param("userId") Long userId);
 }
 

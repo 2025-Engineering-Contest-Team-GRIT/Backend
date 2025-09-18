@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -97,22 +99,29 @@ public class CourseService {
      * Map<과목코드, Course엔티티> 형태로 반환합니다.
      */
     private Map<String, Course> createAndSaveCourses(List<CourseDataDto> dtoList) {
-        // DTO 리스트에서 과목 코드를 기준으로 중복을 제거한 유일한 DTO 리스트를 생성
-        List<Course> courses = dtoList.stream()
-                .collect(Collectors.toMap(CourseDataDto::getId, Function.identity(), (dto1, dto2) -> dto1))
-                .values().stream()
-                .map(dto -> {
-                    Semester semester = convertStringToSemester(dto.getSemester());
-                    return Course.builder()
-                            .courseCode(dto.getId())
-                            .courseName(dto.getName())
-                            .openGrade(dto.getYear())
-                            .openSemester(semester)
-                            .credits(dto.getCredits())
-                            .description(dto.getDescription()) // 설명 필드 추가
-                            .build();
-                })
-                .toList();
+        // 과목별로 그룹화 (중복 제거)
+        Map<String, List<CourseDataDto>> courseGroups = dtoList.stream()
+                .collect(Collectors.groupingBy(CourseDataDto::getId));
+
+        // 각 과목 그룹을 하나의 Course 엔티티로 변환
+        List<Course> courses = new ArrayList<>();
+        for (Map.Entry<String, List<CourseDataDto>> entry : courseGroups.entrySet()) {
+            List<CourseDataDto> courseDataList = entry.getValue();
+
+            // 첫 번째 데이터로 기본 정보 설정
+            CourseDataDto firstData = courseDataList.get(0);
+            Semester semester = convertStringToSemester(firstData.getSemester());
+            Course course = Course.builder()
+                    .courseCode(firstData.getId())
+                    .courseName(firstData.getName())
+                    .openGrade(firstData.getYear())
+                    .openSemester(semester)
+                    .credits(firstData.getCredits())
+                    .description(firstData.getDescription())
+                    .build();
+
+            courses.add(course);
+        }
 
         // 중복 제거된 Course 리스트를 DB에 한번에 저장
         courseRepository.saveAll(courses);

@@ -64,10 +64,9 @@ public class Course extends BaseEntity {
         this.openSemester = openSemester;
     }
 
-    /**
-     * 과목 설명 업데이트
-     */
+    // 과목 설명 업데이트
     public void updateDescription(String description) {
         this.description = description;
     }
+
 }
