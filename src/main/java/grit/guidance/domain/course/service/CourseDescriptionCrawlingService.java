@@ -28,7 +28,6 @@ public class CourseDescriptionCrawlingService {
         "https://hansung.ac.kr/CSE/10755/subview.do", // 빅데이터
         "https://hansung.ac.kr/CSE/10756/subview.do"  // 디지털콘텐츠 및 가상현실
     };
-    
 
     //데이터베이스의 Course 엔티티에서 설명이 없는 과목들의 설명을 크롤링하여 업데이트
     @Transactional

@@ -1,5 +1,4 @@
-package grit.guidance.domain.graduation.entity;
-
+package grit.guidance.domain.simulation.entity;
 
 import grit.guidance.domain.course.entity.Course;
 import grit.guidance.global.common.BaseEntity;
@@ -21,18 +20,16 @@ public class GraduationPlanCourse extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "graduation_plan_course_id") //졸업시뮬레이션 할 때 사용될 과목의 id
+    @Column(name = "graduation_plan_course_id")
     private Long id;
 
-    // 다대일 관계 - graduation_plan_course와 graduation_plan (단방향)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "graduation_plan_id", nullable = false)
-    private GraduationPlan graduationPlan; //졸업계획 id 와 연결
+    private GraduationPlan graduationPlan;
 
-    // 다대일 관계 - graduation_plan_course와 course (단방향)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
-    private Course course; //course에서 id를 가져올 예정
+    private Course course;
 
     @Builder
     private GraduationPlanCourse(GraduationPlan graduationPlan, Course course) {

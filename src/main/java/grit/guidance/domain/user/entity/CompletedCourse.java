@@ -59,8 +59,12 @@ public class CompletedCourse extends BaseEntity {
     private BigDecimal gradePoint; // 성적 평점 (4.5, 4.0 등)
 
     @Builder
-    public CompletedCourse(Users users, Course course, Track track, Integer completedYear, 
-                          Integer gradeLevel, Semester completedSemester, CompletedGrade completedGrade, BigDecimal gradePoint) {
+    public CompletedCourse(Users users, Course course, Track track, Integer completedYear,
+                           Integer gradeLevel, Semester completedSemester, CompletedGrade completedGrade, BigDecimal gradePoint) {
+        // 빌더를 통해 생성될 때 연관관계를 설정합니다.
+        if (users != null) {
+            users.getCompletedCourses().add(this);
+        }
         this.users = users;
         this.course = course;
         this.track = track;
@@ -69,6 +73,19 @@ public class CompletedCourse extends BaseEntity {
         this.completedSemester = completedSemester;
         this.completedGrade = completedGrade;
         this.gradePoint = gradePoint;
+    }
+
+    //== 연관관계 편의 메서드 ==//
+    public void setUsers(Users users) {
+        // 기존 관계가 있다면 제거합니다.
+        if (this.users != null) {
+            this.users.getCompletedCourses().remove(this);
+        }
+        this.users = users;
+        // 새로운 관계를 설정합니다.
+        if (users != null) {
+            users.getCompletedCourses().add(this);
+        }
     }
 
     // 비즈니스 메서드

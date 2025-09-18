@@ -1,4 +1,4 @@
-package grit.guidance.domain.graduation.entity;
+package grit.guidance.domain.simulation.entity;
 
 import grit.guidance.domain.user.entity.Users;
 import grit.guidance.global.common.BaseEntity;
@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-import grit.guidance.domain.graduation.entity.GraduationPlanCourse;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,4 +43,6 @@ public class GraduationPlan extends BaseEntity {
         this.planName = planName;
         this.users = users;
     }
+
+
 }
