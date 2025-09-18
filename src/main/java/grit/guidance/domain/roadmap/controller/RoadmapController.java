@@ -143,7 +143,7 @@ public class RoadmapController {
     @Operation(summary = "통합 로드맵 추천", description = "1단계 필수과목 + 2단계 유사도검색 + LLM 로드맵 추천을 통합합니다.")
     public ResponseEntity<Map<String, Object>> recommendRoadmap(@RequestBody CourseRecommendationRequest request) {
         try {
-            log.info("🎯 통합 로드맵 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}", 
+            log.info("통합 로드맵 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}",
                     request.getStudentId(), request.getTrackIds(), request.getLearningStyle(), request.getAdvancedSettings());
 
             // 통합 로드맵 추천 (1단계 + 2단계 + LLM)

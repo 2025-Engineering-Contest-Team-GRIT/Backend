@@ -180,7 +180,7 @@ public class CourseEmbeddingService {
      */
     public List<Map<String, Object>> searchCoursesByPreference(String userQuery, int topK) {
         try {
-            log.info("🔍 CourseEmbeddingService 검색 시작: query='{}', topK={}", userQuery, topK);
+            log.info("CourseEmbeddingService 검색 시작: query='{}', topK={}", userQuery, topK);
             
             // Qdrant에서 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCourses(userQuery, topK);
@@ -200,7 +200,7 @@ public class CourseEmbeddingService {
      */
     public List<Map<String, Object>> getMandatoryCourses(List<Long> trackIds, String studentId) {
         try {
-            log.info("📋 1단계: 필수 과목 목록 확보 시작 - trackIds={}, studentId={}", trackIds, studentId);
+            log.info("1단계: 필수 과목 목록 확보 시작 - trackIds={}, studentId={}", trackIds, studentId);
 
             // 1. 학번으로 사용자 찾기
             Users user = usersRepository.findByStudentId(studentId)
@@ -240,11 +240,11 @@ public class CourseEmbeddingService {
                 mandatoryCourses.add(courseInfo);
             }
 
-            log.info("✅ 1단계: 필수 과목 목록 확보 완료 - {}개 과목", mandatoryCourses.size());
+            log.info("1단계: 필수 과목 목록 확보 완료 - {}개 과목", mandatoryCourses.size());
             return mandatoryCourses;
 
         } catch (Exception e) {
-            log.error("❌ 1단계: 필수 과목 목록 확보 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
+            log.error("1단계: 필수 과목 목록 확보 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
             throw new RuntimeException("필수 과목 목록 확보에 실패했습니다.", e);
         }
     }
@@ -257,7 +257,7 @@ public class CourseEmbeddingService {
                                                           CourseRecommendationRequest.LearningStyle learningStyle,
                                                           CourseRecommendationRequest.AdvancedSettings advancedSettings) {
         try {
-            log.info("🔍 2단계: 벡터 DB 검색 시작 - trackIds={}, studentId={}, learningStyle={}, advancedSettings={}", 
+            log.info("2단계: 벡터 DB 검색 시작 - trackIds={}, studentId={}, learningStyle={}, advancedSettings={}",
                     trackIds, studentId, learningStyle, advancedSettings);
 
             // 1. 학번으로 사용자 찾기
@@ -272,20 +272,20 @@ public class CourseEmbeddingService {
             String searchQuery;
             if (advancedSettings != null && advancedSettings.getTechStack() != null && !advancedSettings.getTechStack().trim().isEmpty()) {
                 searchQuery = advancedSettings.getTechStack();
-                log.info("🔍 Tech Stack 기반 검색: {}", searchQuery);
+                log.info("Tech Stack 기반 검색: {}", searchQuery);
             } else {
                 searchQuery = "프로그래밍 개발"; // 기본 검색 쿼리
-                log.info("🔍 기본 검색 쿼리 사용: {}", searchQuery);
+                log.info("기본 검색 쿼리 사용: {}", searchQuery);
             }
             
             // 4. 트랙 이름 목록 조회 (Qdrant 필터링용)
             List<String> trackNames = getTrackNamesByIds(trackIds);
-            log.info("🔍 트랙 필터링: {}", trackNames);
+            log.info("트랙 필터링: {}", trackNames);
             
             // 5. Qdrant에서 트랙 필터링된 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCoursesWithFilter(
                     searchQuery, 30, trackNames);
-            log.info("🔍 Qdrant 검색 결과: {}개", searchResults.size());
+            log.info("Qdrant 검색 결과: {}개", searchResults.size());
             
             // 6. 이수/수강중인 과목 제외
             List<Map<String, Object>> recommendedCourses = new ArrayList<>();
@@ -301,7 +301,7 @@ public class CourseEmbeddingService {
                     try {
                         courseId = Long.parseLong((String) courseIdObj);
                     } catch (NumberFormatException e) {
-                        log.warn("⚠️ 잘못된 courseId 형식: {}", courseIdObj);
+                        log.warn("잘못된 courseId 형식: {}", courseIdObj);
                         continue;
                     }
                 } else if (courseIdObj instanceof Integer) {
@@ -320,11 +320,11 @@ public class CourseEmbeddingService {
                 recommendedCourses.add(course);
             }
 
-            log.info("✅ 2단계: 벡터 DB 검색 완료 - {}개 과목 (트랙 필터링 후)", recommendedCourses.size());
+            log.info("2단계: 벡터 DB 검색 완료 - {}개 과목 (트랙 필터링 후)", recommendedCourses.size());
             return recommendedCourses;
 
         } catch (Exception e) {
-            log.error("❌ 2단계: 벡터 DB 검색 실패 - trackIds={}, studentId={}, learningStyle={}", trackIds, studentId, learningStyle, e);
+            log.error("2단계: 벡터 DB 검색 실패 - trackIds={}, studentId={}, learningStyle={}", trackIds, studentId, learningStyle, e);
             throw new RuntimeException("벡터 DB 검색에 실패했습니다.", e);
         }
     }
@@ -340,7 +340,7 @@ public class CourseEmbeddingService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("❌ 트랙 이름 조회 실패 - trackIds: {}", trackIds, e);
+            log.error("트랙 이름 조회 실패 - trackIds: {}", trackIds, e);
             return new ArrayList<>();
         }
     }
@@ -356,7 +356,7 @@ public class CourseEmbeddingService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("❌ 트랙별 과목 조회 실패 - trackIds: {}", trackIds, e);
+            log.error("트랙별 과목 조회 실패 - trackIds: {}", trackIds, e);
             return new ArrayList<>();
         }
     }
@@ -433,13 +433,13 @@ public class CourseEmbeddingService {
             semesterInfo.put("recommendationStartYear", nextYear);
             semesterInfo.put("recommendationStartSemester", nextSemester);
             
-            log.info("📅 학기 계산 완료 - 최신이수: {}{}, 현재수강: {}, 추천시작: {}{}", 
+            log.info("학기 계산 완료 - 최신이수: {}{}, 현재수강: {}, 추천시작: {}{}",
                     latestYear, latestSemester, hasCurrentEnrollment, nextYear, nextSemester);
             
             return semesterInfo;
             
         } catch (Exception e) {
-            log.error("❌ 사용자 학기 계산 실패 - studentId: {}", studentId, e);
+            log.error("사용자 학기 계산 실패 - studentId: {}", studentId, e);
             throw new RuntimeException("사용자 학기 계산에 실패했습니다.", e);
         }
     }
@@ -453,7 +453,7 @@ public class CourseEmbeddingService {
             return requirements.stream()
                     .anyMatch(req -> trackIds.contains(req.getTrack().getId()));
         } catch (Exception e) {
-            log.warn("⚠️ 트랙 확인 실패 - courseId: {}, trackIds: {}", courseId, trackIds, e);
+            log.warn("트랙 확인 실패 - courseId: {}, trackIds: {}", courseId, trackIds, e);
             return false;
         }
     }
@@ -482,20 +482,20 @@ public class CourseEmbeddingService {
             CourseRecommendationRequest.AdvancedSettings advancedSettings) {
         
         try {
-            log.info("🎯 통합 로드맵 추천 시작 - trackIds={}, studentId={}", trackIds, studentId);
+            log.info("통합 로드맵 추천 시작 - trackIds={}, studentId={}", trackIds, studentId);
 
             // 0단계: 사용자 학기 상태 파악
             Map<String, Object> semesterInfo = calculateUserSemester(studentId);
-            log.info("📅 사용자 학기 정보: {}", semesterInfo);
+            log.info("사용자 학기 정보: {}", semesterInfo);
             
             // 1단계: 필수 과목 목록 확보 (규칙 기반 필터링)
             List<Map<String, Object>> mandatoryCourses = getMandatoryCourses(trackIds, studentId);
-            log.info("📋 1단계 완료: 필수 과목 {}개", mandatoryCourses.size());
+            log.info("1단계 완료: 필수 과목 {}개", mandatoryCourses.size());
             
             // 2단계: 벡터 DB 검색 목록 확보 (유사도 검색)
             List<Map<String, Object>> recommendedCourses = getRecommendedCourses(
                     trackIds, studentId, learningStyle, advancedSettings);
-            log.info("🔍 2단계 완료: 추천 과목 {}개", recommendedCourses.size());
+            log.info("2단계 완료: 추천 과목 {}개", recommendedCourses.size());
             
             // 3단계: LLM에게 로드맵 추천 요청 (학기 정보 포함)
             String techStack = (advancedSettings != null && advancedSettings.getTechStack() != null) 
@@ -512,11 +512,11 @@ public class CourseEmbeddingService {
             response.put("roadMap", llmResponse.get("roadMap"));
             response.put("status", "success");
             
-            log.info("✅ 통합 로드맵 추천 완료");
+            log.info("통합 로드맵 추천 완료");
             return response;
 
         } catch (Exception e) {
-            log.error("❌ 통합 로드맵 추천 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
+            log.error("통합 로드맵 추천 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
             throw new RuntimeException("통합 로드맵 추천에 실패했습니다.", e);
         }
     }

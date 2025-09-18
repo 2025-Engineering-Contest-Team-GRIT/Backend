@@ -38,7 +38,7 @@ public class LlmRoadmapService {
             Map<String, Object> semesterInfo) {
         
         try {
-            log.info("🤖 LLM 로드맵 추천 요청 시작 - studentId: {}, trackIds: {}, mandatory: {}개, recommended: {}개", 
+            log.info("LLM 로드맵 추천 요청 시작 - studentId: {}, trackIds: {}, mandatory: {}개, recommended: {}개",
                     studentId, trackIds, mandatoryCourses.size(), recommendedCourses.size());
 
             // 프롬프트 생성 (학기 정보 포함)
@@ -78,7 +78,7 @@ public class LlmRoadmapService {
             int nextYear = (Integer) semesterInfo.get("nextYear");
             String nextSemester = (String) semesterInfo.get("nextSemester");
             
-            prompt.append("📅 **학생 학기 정보:**\n");
+            prompt.append("**학생 학기 정보:**\n");
             prompt.append(String.format("- 최신 이수 학기: %d학년 %s학기\n", latestYear, latestSemester));
             prompt.append(String.format("- 현재 수강중: %s\n", hasCurrentEnrollment ? "예" : "아니오"));
             prompt.append(String.format("- 추천 시작 학기: %d학년 %s학기부터\n\n", nextYear, nextSemester));
@@ -93,11 +93,13 @@ public class LlmRoadmapService {
             prompt.append("없음\n");
         } else {
             for (Map<String, Object> course : mandatoryCourses) {
-                prompt.append(String.format("- %s (%s): %s - %s\n", 
+                prompt.append(String.format("- %s (%s): %s - %s [개설: %d학년 %s학기]\n", 
                     course.get("courseName") != null ? course.get("courseName") : "N/A", 
                     course.get("courseCode") != null ? course.get("courseCode") : "N/A",
                     course.get("courseType") != null ? course.get("courseType") : "N/A",
-                    course.get("description") != null ? course.get("description") : "N/A"));
+                    course.get("description") != null ? course.get("description") : "N/A",
+                    course.get("openGrade") != null ? course.get("openGrade") : "N/A",
+                    course.get("openSemester") != null ? course.get("openSemester") : "N/A"));
             }
         }
         
@@ -122,11 +124,13 @@ public class LlmRoadmapService {
                     scoreStr = scoreObj.toString();
                 }
                 
-                prompt.append(String.format("- %s (%s): %s - %s (유사도: %s)\n", 
+                prompt.append(String.format("- %s (%s): %s - %s [개설: %d학년 %s학기] (유사도: %s)\n", 
                     course.get("courseName") != null ? course.get("courseName") : "N/A", 
                     course.get("courseCode") != null ? course.get("courseCode") : "N/A",
                     course.get("description") != null ? course.get("description") : "N/A",
                     course.get("tracks") != null ? course.get("tracks") : "N/A",
+                    course.get("openGrade") != null ? course.get("openGrade") : "N/A",
+                    course.get("openSemester") != null ? course.get("openSemester") : "N/A",
                     scoreStr));
             }
         }
@@ -137,7 +141,12 @@ public class LlmRoadmapService {
         prompt.append("결과는 반드시 아래와 같은 JSON 형식으로만 응답해야 합니다. ");
         prompt.append("roadMap 배열 안에는 학기별로 추천 과목을 그룹화하고, ");
         prompt.append("각 과목에는 추천 이유(recommendDescription)를 반드시 포함해야 합니다.\n");
-        prompt.append("**중요: 추천 시작 학기부터 순차적으로 로드맵을 구성하세요.**\n\n");
+        prompt.append("**중요 규칙:**\n");
+        prompt.append("1. 추천 시작 학기부터 순차적으로 로드맵을 구성하세요.\n");
+        prompt.append("2. 각 과목은 해당 과목의 개설 학년/학기에만 추천할 수 있습니다.\n");
+        prompt.append("3. 예: 3학년 2학기 과목은 3학년 2학기에만 추천 가능합니다.\n");
+        prompt.append("4. 캡스톤 과목은 하나만 추천하세요.\n");
+        prompt.append("5. (ipp)과목은 추천하지 마세요.\n\n");
         
         prompt.append("{\n");
         prompt.append("  \"roadMap\": [\n");
@@ -146,14 +155,14 @@ public class LlmRoadmapService {
         prompt.append("      \"recommendSemester\": \"SECOND\",\n");
         prompt.append("      \"courses\": [\n");
         prompt.append("        {\n");
-        prompt.append("          \"courseCode\": \"V021009\",\n");
-        prompt.append("          \"courseName\": \"모바일시스템응용프로젝트\",\n");
-        prompt.append("          \"recommendDescription\": \"학생의 제2트랙 전공필수 과목이며, 4학년 2학기 설계 과목으로 필수적입니다.\"\n");
+        prompt.append("          \"courseCode\": \"과목코드\",\n");
+        prompt.append("          \"courseName\": \"과목이름\",\n");
+        prompt.append("          \"recommendDescription\": \"추천이유\"\n");
         prompt.append("        },\n");
         prompt.append("        {\n");
-        prompt.append("          \"courseCode\": \"V024009\",\n");
-        prompt.append("          \"courseName\": \"클라우드 컴퓨팅\",\n");
-        prompt.append("          \"recommendDescription\": \"학생의 제1트랙 전공필수이며, 관심 기술 스택인 AWS와 직접적으로 연관된 핵심 과목입니다.\"\n");
+        prompt.append("          \"courseCode\": \"과목코드\",\n");
+        prompt.append("          \"courseName\": \"과목이름\",\n");
+        prompt.append("          \"recommendDescription\": \"추천이유\"\n");
         prompt.append("        }\n");
         prompt.append("      ]\n");
         prompt.append("    }\n");
@@ -170,7 +179,7 @@ public class LlmRoadmapService {
         String url = openaiApiUrl + "/v1/chat/completions";
         
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o-mini");
+        requestBody.put("model", "gpt-4o");
         requestBody.put("messages", List.of(
             Map.of("role", "user", "content", prompt)
         ));
@@ -183,7 +192,7 @@ public class LlmRoadmapService {
         
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
-        log.info("📤 OpenAI API 호출 시작");
+        log.info("OpenAI API 호출 시작");
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
         
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
