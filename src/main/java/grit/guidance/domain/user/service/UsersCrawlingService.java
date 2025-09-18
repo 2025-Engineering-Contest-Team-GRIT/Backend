@@ -97,6 +97,14 @@ public class UsersCrawlingService {
                 timetableJson
         );
 
+        // 6. 한성대 사이트 로그아웃 (세션 정리)
+        try {
+            logoutFromHansung(sessionCookie);
+            log.info("한성대 사이트 로그아웃 완료");
+        } catch (Exception e) {
+            log.warn("한성대 사이트 로그아웃 실패: {}", e.getMessage());
+        }
+
         log.info("=== 크롤링 결과 JSON ===");
         log.info("사용자 정보: {}", userInfo);
         log.info("성적 정보: {}", grades);
@@ -109,6 +117,29 @@ public class UsersCrawlingService {
         return result;
     }
 
+
+    /**
+     * 한성대 사이트에서 로그아웃 처리
+     */
+    private void logoutFromHansung(String sessionCookie) {
+        try {
+            HttpHeaders logoutHeaders = new HttpHeaders();
+            logoutHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+            logoutHeaders.add(HttpHeaders.REFERER, HANSUNG_INFO_URL + "/index.jsp");
+            
+            // 로그아웃 요청
+            restTemplate.exchange(
+                HANSUNG_INFO_URL + "/servlet/s_gong.gong_logout",
+                HttpMethod.GET,
+                new HttpEntity<>(logoutHeaders),
+                String.class
+            );
+            
+            log.info("한성대 사이트 로그아웃 요청 완료");
+        } catch (Exception e) {
+            log.warn("한성대 사이트 로그아웃 중 오류: {}", e.getMessage());
+        }
+    }
 
     // --- 파싱 로직 ---
 
