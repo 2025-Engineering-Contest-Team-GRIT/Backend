@@ -38,14 +38,14 @@ public class QdrantRepository {
             Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
             envApiKey = dotenv.get("OPENAI_API_KEY");
         } catch (Exception e) {
-            System.out.println("⚠️ .env 파일을 읽을 수 없습니다: " + e.getMessage());
+            System.out.println(".env 파일을 읽을 수 없습니다: " + e.getMessage());
         }
         
         // Spring 설정에서 읽은 키가 있으면 사용, 없으면 .env에서 읽은 키 사용
         this.openaiApiKey = (openaiApiKey != null && !openaiApiKey.trim().isEmpty()) ? openaiApiKey : envApiKey;
         
         // 디버깅용 로그
-        System.out.println("🔍 QdrantRepository 초기화:");
+        System.out.println("QdrantRepository 초기화:");
         System.out.println("  - qdrantHost: " + qdrantHost);
         System.out.println("  - qdrantPort: " + qdrantPort);
         System.out.println("  - collectionName: " + collectionName);
@@ -61,7 +61,7 @@ public class QdrantRepository {
         try {
             // OpenAI API 키가 없으면 더미 벡터 사용
             if (openaiApiKey == null || openaiApiKey.trim().isEmpty()) {
-                System.out.println("⚠️ OpenAI API 키가 설정되지 않아 더미 벡터를 사용합니다.");
+                System.out.println("OpenAI API 키가 설정되지 않아 더미 벡터를 사용합니다.");
                 return generateDummyVector();
             }
 
@@ -85,16 +85,16 @@ public class QdrantRepository {
                 List<Map<String, Object>> data = (List<Map<String, Object>>) responseBody.get("data");
                 if (data != null && !data.isEmpty()) {
                     List<Double> embedding = (List<Double>) data.get(0).get("embedding");
-                    System.out.println("✅ OpenAI API로 벡터 생성 성공: " + text.substring(0, Math.min(50, text.length())) + "...");
+                    System.out.println("OpenAI API로 벡터 생성 성공: " + text.substring(0, Math.min(50, text.length())) + "...");
                     return embedding;
                 }
             }
             
-            System.err.println("❌ OpenAI API 응답 오류: " + response.getStatusCode());
+            System.err.println("OpenAI API 응답 오류: " + response.getStatusCode());
             return generateDummyVector();
             
         } catch (Exception e) {
-            System.err.println("❌ OpenAI API 호출 실패: " + e.getMessage());
+            System.err.println("OpenAI API 호출 실패: " + e.getMessage());
             return generateDummyVector();
         }
     }
@@ -201,9 +201,9 @@ public class QdrantRepository {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("✅ Qdrant 직접 저장 성공: " + id + " - " + text.substring(0, Math.min(50, text.length())));
+                System.out.println("Qdrant 직접 저장 성공: " + id + " - " + text.substring(0, Math.min(50, text.length())));
             } else {
-                System.err.println("❌ Qdrant 저장 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 저장 실패: " + response.getStatusCode());
             }
             
         } catch (Exception e) {
@@ -269,7 +269,7 @@ public class QdrantRepository {
      */
     public List<Map<String, Object>> searchSimilarCourses(String query, int topK) {
         try {
-            System.out.println("🔍 Qdrant 검색 시작: query='" + query + "', topK=" + topK);
+            System.out.println("Qdrant 검색 시작: query='" + query + "', topK=" + topK);
             
             // 쿼리 텍스트를 벡터로 변환
             List<Double> queryVector = generateEmbedding(query);
@@ -282,7 +282,7 @@ public class QdrantRepository {
             requestBody.put("limit", topK);
             requestBody.put("with_payload", true);
             
-            System.out.println("📤 Qdrant 요청 본문: " + objectMapper.writeValueAsString(requestBody));
+            System.out.println("Qdrant 요청 본문: " + objectMapper.writeValueAsString(requestBody));
             
             HttpHeaders headers = new HttpHeaders();
             headers.set("Content-Type", "application/json");
@@ -294,7 +294,7 @@ public class QdrantRepository {
                 Map<String, Object> responseBody = response.getBody();
                 List<Map<String, Object>> results = (List<Map<String, Object>>) responseBody.get("result");
                 
-                System.out.println("✅ Qdrant 검색 성공: " + (results != null ? results.size() : 0) + "개 결과 반환");
+                System.out.println("Qdrant 검색 성공: " + (results != null ? results.size() : 0) + "개 결과 반환");
                 
                 if (results != null) {
                     return results.stream()
@@ -308,16 +308,16 @@ public class QdrantRepository {
                             })
                             .toList();
                 } else {
-                    System.out.println("⚠️ Qdrant 검색 결과가 null입니다.");
+                    System.out.println("Qdrant 검색 결과가 null입니다.");
                     return List.of();
                 }
             } else {
-                System.err.println("❌ Qdrant 검색 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 검색 실패: " + response.getStatusCode());
                 return List.of();
             }
                     
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 직접 검색 실패: " + e.getMessage());
+            System.err.println("Qdrant 직접 검색 실패: " + e.getMessage());
             e.printStackTrace();
             return List.of();
         }
@@ -353,7 +353,7 @@ public class QdrantRepository {
                 requestBody.put("filter", filter);
             }
             
-            System.out.println("📤 Qdrant 필터링 요청 본문: " + objectMapper.writeValueAsString(requestBody));
+            System.out.println("Qdrant 필터링 요청 본문: " + objectMapper.writeValueAsString(requestBody));
             
             HttpHeaders headers = new HttpHeaders();
             headers.set("Content-Type", "application/json");
@@ -365,7 +365,7 @@ public class QdrantRepository {
                 Map<String, Object> responseBody = response.getBody();
                 List<Map<String, Object>> results = (List<Map<String, Object>>) responseBody.get("result");
                 
-                System.out.println("✅ Qdrant 필터링 검색 성공: " + (results != null ? results.size() : 0) + "개 결과 반환");
+                System.out.println("Qdrant 필터링 검색 성공: " + (results != null ? results.size() : 0) + "개 결과 반환");
                 
                 if (results != null) {
                     return results.stream()
@@ -379,16 +379,16 @@ public class QdrantRepository {
                             })
                             .toList();
                 } else {
-                    System.out.println("⚠️ Qdrant 필터링 검색 결과가 null입니다.");
+                    System.out.println("Qdrant 필터링 검색 결과가 null입니다.");
                     return List.of();
                 }
             } else {
-                System.err.println("❌ Qdrant 필터링 검색 실패: " + response.getStatusCode());
+                System.err.println("Qdrant 필터링 검색 실패: " + response.getStatusCode());
                 return List.of();
             }
                     
         } catch (Exception e) {
-            System.err.println("❌ Qdrant 필터링 검색 실패: " + e.getMessage());
+            System.err.println("Qdrant 필터링 검색 실패: " + e.getMessage());
             e.printStackTrace();
             return List.of();
         }

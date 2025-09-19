@@ -55,7 +55,7 @@ public class RoadmapController {
     public ResponseEntity<Map<String, Object>> searchCourses(@RequestBody SearchRequest request) {
         try {
             int topK = 20;  // 고정값으로 20개 설정
-            log.info("🔍 RoadmapController 검색 요청: query='{}', topK={}", request.getQuery(), topK);
+            log.info("RoadmapController 검색 요청: query='{}', topK={}", request.getQuery(), topK);
 
             List<Map<String, Object>> results = courseEmbeddingService.searchCoursesByPreference(request.getQuery(), topK);
 
@@ -106,7 +106,7 @@ public class RoadmapController {
     @Operation(summary = "과목 추천", description = "사용자의 트랙과 학습 스타일에 따라 과목을 추천합니다.")
     public ResponseEntity<Map<String, Object>> recommendCourses(@RequestBody CourseRecommendationRequest request) {
         try {
-            log.info("🎯 과목 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}", 
+            log.info("과목 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}",
                     request.getStudentId(), request.getTrackIds(), request.getLearningStyle(), request.getAdvancedSettings());
 
             // 1단계: 필수 과목 목록 확보 (규칙 기반 필터링)
@@ -143,7 +143,7 @@ public class RoadmapController {
     @Operation(summary = "통합 로드맵 추천", description = "1단계 필수과목 + 2단계 유사도검색 + LLM 로드맵 추천을 통합합니다.")
     public ResponseEntity<Map<String, Object>> recommendRoadmap(@RequestBody CourseRecommendationRequest request) {
         try {
-            log.info("🎯 통합 로드맵 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}", 
+            log.info("통합 로드맵 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}",
                     request.getStudentId(), request.getTrackIds(), request.getLearningStyle(), request.getAdvancedSettings());
 
             // 통합 로드맵 추천 (1단계 + 2단계 + LLM)

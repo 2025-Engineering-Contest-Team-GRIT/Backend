@@ -180,7 +180,7 @@ public class CourseEmbeddingService {
      */
     public List<Map<String, Object>> searchCoursesByPreference(String userQuery, int topK) {
         try {
-            log.info("🔍 CourseEmbeddingService 검색 시작: query='{}', topK={}", userQuery, topK);
+            log.info("CourseEmbeddingService 검색 시작: query='{}', topK={}", userQuery, topK);
             
             // Qdrant에서 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCourses(userQuery, topK);
@@ -200,7 +200,7 @@ public class CourseEmbeddingService {
      */
     public List<Map<String, Object>> getMandatoryCourses(List<Long> trackIds, String studentId) {
         try {
-            log.info("📋 1단계: 필수 과목 목록 확보 시작 - trackIds={}, studentId={}", trackIds, studentId);
+            log.info("1단계: 필수 과목 목록 확보 시작 - trackIds={}, studentId={}", trackIds, studentId);
 
             // 1. 학번으로 사용자 찾기
             Users user = usersRepository.findByStudentId(studentId)
@@ -240,11 +240,11 @@ public class CourseEmbeddingService {
                 mandatoryCourses.add(courseInfo);
             }
 
-            log.info("✅ 1단계: 필수 과목 목록 확보 완료 - {}개 과목", mandatoryCourses.size());
+            log.info("1단계: 필수 과목 목록 확보 완료 - {}개 과목", mandatoryCourses.size());
             return mandatoryCourses;
 
         } catch (Exception e) {
-            log.error("❌ 1단계: 필수 과목 목록 확보 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
+            log.error("1단계: 필수 과목 목록 확보 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
             throw new RuntimeException("필수 과목 목록 확보에 실패했습니다.", e);
         }
     }
@@ -257,7 +257,7 @@ public class CourseEmbeddingService {
                                                           CourseRecommendationRequest.LearningStyle learningStyle,
                                                           CourseRecommendationRequest.AdvancedSettings advancedSettings) {
         try {
-            log.info("🔍 2단계: 벡터 DB 검색 시작 - trackIds={}, studentId={}, learningStyle={}, advancedSettings={}", 
+            log.info("2단계: 벡터 DB 검색 시작 - trackIds={}, studentId={}, learningStyle={}, advancedSettings={}",
                     trackIds, studentId, learningStyle, advancedSettings);
 
             // 1. 학번으로 사용자 찾기
@@ -268,24 +268,63 @@ public class CourseEmbeddingService {
             List<Long> completedCourseIds = completedCourseRepository.findCourseIdsByUserId(user.getId());
             List<Long> enrolledCourseIds = enrolledCourseRepository.findCourseIdsByUserId(user.getId());
             
-            // 3. 검색 쿼리 생성 (tech_stack 우선, 없으면 기본 쿼리)
-            String searchQuery;
-            if (advancedSettings != null && advancedSettings.getTechStack() != null && !advancedSettings.getTechStack().trim().isEmpty()) {
-                searchQuery = advancedSettings.getTechStack();
-                log.info("🔍 Tech Stack 기반 검색: {}", searchQuery);
-            } else {
-                searchQuery = "프로그래밍 개발"; // 기본 검색 쿼리
-                log.info("🔍 기본 검색 쿼리 사용: {}", searchQuery);
+            // 3. 트랙 정보 조회 (1트랙, 2트랙 구분)
+            List<String> trackNames = getTrackNamesByIds(trackIds);
+            String primaryTrack = trackNames.size() > 0 ? trackNames.get(0) : null;
+            String secondaryTrack = trackNames.size() > 1 ? trackNames.get(1) : null;
+            
+            log.info("트랙 정보 - 1트랙: {}, 2트랙: {}", primaryTrack, secondaryTrack);
+            
+            // 4. 검색 쿼리 생성 (1트랙 + 2트랙 + tech_stack + 핵심과목 조합, 가중치 적용)
+            StringBuilder searchQueryBuilder = new StringBuilder();
+            
+            // 1트랙 추가 (가중치 높음 - 2번 반복)
+            if (primaryTrack != null) {
+                searchQueryBuilder.append(primaryTrack).append(" ").append(primaryTrack).append(" ");
+                log.info("1트랙 (가중치 높음): {}", primaryTrack);
             }
             
-            // 4. 트랙 이름 목록 조회 (Qdrant 필터링용)
-            List<String> trackNames = getTrackNamesByIds(trackIds);
-            log.info("🔍 트랙 필터링: {}", trackNames);
+            // 2트랙 추가 (가중치 중간)
+            if (secondaryTrack != null) {
+                searchQueryBuilder.append(secondaryTrack).append(" ");
+                log.info("2트랙 (가중치 중간): {}", secondaryTrack);
+            }
+            
+            // tech_stack 추가 (가중치 높음 - 2번 반복)
+            if (advancedSettings != null && advancedSettings.getTechStack() != null && !advancedSettings.getTechStack().trim().isEmpty()) {
+                String techStack = advancedSettings.getTechStack().trim();
+                searchQueryBuilder.append(techStack).append(" ").append(techStack);
+                log.info("Tech Stack (가중치 높음): {}", techStack);
+            } else {
+                searchQueryBuilder.append("프로그래밍 개발"); // 기본 검색 쿼리
+                log.info("기본 검색 쿼리 사용: 프로그래밍 개발");
+            }
+            
+            // 핵심 과목 추가 (가중치 중간 - 1번씩)
+            String coreSubjects = "프로그래밍랩 컴퓨터구조 프로그래밍언어론 객체지향언어1 자료구조 " +
+                                "객체지향언어2 데이터통신 알고리즘 오픈소스소프트웨어 운영체제 " +
+                                "데이터베이스 소프트웨어공학 설계패턴 네트워크프로그래밍 시스템프로그래밍 컴파일러 정보보안";
+            searchQueryBuilder.append(" ").append(coreSubjects);
+            log.info("핵심 과목 추가: {}", coreSubjects);
+            
+            String searchQuery = searchQueryBuilder.toString().trim();
+            log.info("통합 검색 쿼리 (가중치 적용): {}", searchQuery);
             
             // 5. Qdrant에서 트랙 필터링된 유사도 검색
             List<Map<String, Object>> searchResults = qdrantRepository.searchSimilarCoursesWithFilter(
                     searchQuery, 30, trackNames);
-            log.info("🔍 Qdrant 검색 결과: {}개", searchResults.size());
+            log.info(" Qdrant 검색 결과: {}개", searchResults.size());
+            
+            // Qdrant 검색 결과 상세 로그
+            log.info("Qdrant 검색 결과 상세 (전체 {}개):", searchResults.size());
+            for (int i = 0; i < searchResults.size(); i++) { // 전체 결과 로그
+                Map<String, Object> course = searchResults.get(i);
+                log.info("  {}. {} ({}) - 유사도: {}", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("score"));
+            }
             
             // 6. 이수/수강중인 과목 제외
             List<Map<String, Object>> recommendedCourses = new ArrayList<>();
@@ -301,7 +340,7 @@ public class CourseEmbeddingService {
                     try {
                         courseId = Long.parseLong((String) courseIdObj);
                     } catch (NumberFormatException e) {
-                        log.warn("⚠️ 잘못된 courseId 형식: {}", courseIdObj);
+                        log.warn("잘못된 courseId 형식: {}", courseIdObj);
                         continue;
                     }
                 } else if (courseIdObj instanceof Integer) {
@@ -320,11 +359,25 @@ public class CourseEmbeddingService {
                 recommendedCourses.add(course);
             }
 
-            log.info("✅ 2단계: 벡터 DB 검색 완료 - {}개 과목 (트랙 필터링 후)", recommendedCourses.size());
+            log.info("2단계: 벡터 DB 검색 완료 - {}개 과목 (이수/수강중인 과목 제외 후)", recommendedCourses.size());
+            
+            // 최종 추천 과목 상세 로그
+            log.info("최종 추천 과목 목록:");
+            for (int i = 0; i < recommendedCourses.size(); i++) {
+                Map<String, Object> course = recommendedCourses.get(i);
+                log.info("  {}. {} ({}) - {}학년 {}학기 - 유사도: {}", 
+                    i + 1,
+                    course.get("courseName"),
+                    course.get("courseCode"),
+                    course.get("openGrade"),
+                    course.get("openSemester"),
+                    course.get("score"));
+            }
+            
             return recommendedCourses;
 
         } catch (Exception e) {
-            log.error("❌ 2단계: 벡터 DB 검색 실패 - trackIds={}, studentId={}, learningStyle={}", trackIds, studentId, learningStyle, e);
+            log.error("2단계: 벡터 DB 검색 실패 - trackIds={}, studentId={}, learningStyle={}", trackIds, studentId, learningStyle, e);
             throw new RuntimeException("벡터 DB 검색에 실패했습니다.", e);
         }
     }
@@ -340,10 +393,11 @@ public class CourseEmbeddingService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("❌ 트랙 이름 조회 실패 - trackIds: {}", trackIds, e);
+            log.error("트랙 이름 조회 실패 - trackIds: {}", trackIds, e);
             return new ArrayList<>();
         }
     }
+
     
     /**
      * 주어진 트랙들에 속하는 모든 과목 ID 목록 조회
@@ -356,7 +410,7 @@ public class CourseEmbeddingService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("❌ 트랙별 과목 조회 실패 - trackIds: {}", trackIds, e);
+            log.error("트랙별 과목 조회 실패 - trackIds: {}", trackIds, e);
             return new ArrayList<>();
         }
     }
@@ -433,13 +487,13 @@ public class CourseEmbeddingService {
             semesterInfo.put("recommendationStartYear", nextYear);
             semesterInfo.put("recommendationStartSemester", nextSemester);
             
-            log.info("📅 학기 계산 완료 - 최신이수: {}{}, 현재수강: {}, 추천시작: {}{}", 
+            log.info("학기 계산 완료 - 최신이수: {}{}, 현재수강: {}, 추천시작: {}{}",
                     latestYear, latestSemester, hasCurrentEnrollment, nextYear, nextSemester);
             
             return semesterInfo;
             
         } catch (Exception e) {
-            log.error("❌ 사용자 학기 계산 실패 - studentId: {}", studentId, e);
+            log.error("사용자 학기 계산 실패 - studentId: {}", studentId, e);
             throw new RuntimeException("사용자 학기 계산에 실패했습니다.", e);
         }
     }
@@ -453,7 +507,7 @@ public class CourseEmbeddingService {
             return requirements.stream()
                     .anyMatch(req -> trackIds.contains(req.getTrack().getId()));
         } catch (Exception e) {
-            log.warn("⚠️ 트랙 확인 실패 - courseId: {}, trackIds: {}", courseId, trackIds, e);
+            log.warn("트랙 확인 실패 - courseId: {}, trackIds: {}", courseId, trackIds, e);
             return false;
         }
     }
@@ -482,20 +536,20 @@ public class CourseEmbeddingService {
             CourseRecommendationRequest.AdvancedSettings advancedSettings) {
         
         try {
-            log.info("🎯 통합 로드맵 추천 시작 - trackIds={}, studentId={}", trackIds, studentId);
+            log.info("통합 로드맵 추천 시작 - trackIds={}, studentId={}", trackIds, studentId);
 
             // 0단계: 사용자 학기 상태 파악
             Map<String, Object> semesterInfo = calculateUserSemester(studentId);
-            log.info("📅 사용자 학기 정보: {}", semesterInfo);
+            log.info("사용자 학기 정보: {}", semesterInfo);
             
             // 1단계: 필수 과목 목록 확보 (규칙 기반 필터링)
             List<Map<String, Object>> mandatoryCourses = getMandatoryCourses(trackIds, studentId);
-            log.info("📋 1단계 완료: 필수 과목 {}개", mandatoryCourses.size());
+            log.info("1단계 완료: 필수 과목 {}개", mandatoryCourses.size());
             
             // 2단계: 벡터 DB 검색 목록 확보 (유사도 검색)
             List<Map<String, Object>> recommendedCourses = getRecommendedCourses(
                     trackIds, studentId, learningStyle, advancedSettings);
-            log.info("🔍 2단계 완료: 추천 과목 {}개", recommendedCourses.size());
+            log.info("2단계 완료: 추천 과목 {}개", recommendedCourses.size());
             
             // 3단계: LLM에게 로드맵 추천 요청 (학기 정보 포함)
             String techStack = (advancedSettings != null && advancedSettings.getTechStack() != null) 
@@ -512,11 +566,11 @@ public class CourseEmbeddingService {
             response.put("roadMap", llmResponse.get("roadMap"));
             response.put("status", "success");
             
-            log.info("✅ 통합 로드맵 추천 완료");
+            log.info("통합 로드맵 추천 완료");
             return response;
 
         } catch (Exception e) {
-            log.error("❌ 통합 로드맵 추천 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
+            log.error("통합 로드맵 추천 실패 - trackIds={}, studentId={}", trackIds, studentId, e);
             throw new RuntimeException("통합 로드맵 추천에 실패했습니다.", e);
         }
     }
