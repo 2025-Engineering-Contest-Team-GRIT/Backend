@@ -23,6 +23,7 @@ import grit.guidance.domain.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import grit.guidance.domain.user.dto.UserTrackDto;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,48 +54,23 @@ public class SimulationService {
         Users user = usersRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
 
-        Set<String> completedCourseCodes = completedCourseRepository.findByUsers(user).stream()
-                .map(completedCourse -> completedCourse.getCourse().getCourseCode())
-                .collect(Collectors.toSet());
-
+        // [추가] 사용자의 트랙 정보를 조회하고, 응답에 포함될 DTO 리스트로 변환합니다.
         List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
-        List<Long> trackIds = userTracks.stream()
-                .map(userTrack -> userTrack.getTrack().getId())
-                .toList();
-
-        List<TrackRequirement> trackRequirements = new ArrayList<>();
-        for (Long trackId : trackIds) {
-            trackRequirements.addAll(trackRequirementRepository.findByTrackId(trackId));
-        }
-
-        Map<Course, String> processedCourses = new HashMap<>();
-        for (TrackRequirement req : trackRequirements) {
-            Course course = req.getCourse();
-            String currentType = req.getCourseType().name();
-            if ("FOUNDATION".equals(currentType)) continue;
-
-            if (processedCourses.containsKey(course)) {
-                if ("ELECTIVE".equals(processedCourses.get(course)) && "MANDATORY".equals(currentType)) {
-                    processedCourses.put(course, currentType);
-                }
-            } else {
-                processedCourses.put(course, currentType);
-            }
-        }
-
-        List<SimulationDto.AvailableCourseDto> availableCourses = processedCourses.entrySet().stream()
-                .filter(entry -> !completedCourseCodes.contains(entry.getKey().getCourseCode()))
-                .map(entry -> SimulationDto.AvailableCourseDto.builder()
-                        .courseCode(entry.getKey().getCourseCode())
-                        .courseName(entry.getKey().getCourseName())
-                        .credit(entry.getKey().getCredits())
-                        .courseType(entry.getValue())
+        List<UserTrackDto> userTrackDtos = userTracks.stream()
+                .map(ut -> UserTrackDto.builder()
+                        .trackId(ut.getTrack().getId())
+                        .trackName(ut.getTrack().getTrackName())
                         .build())
                 .collect(Collectors.toList());
 
+        // [수정] 헬퍼 메소드를 호출할 때, 위에서 조회한 userTracks 정보를 넘겨주어 DB 조회를 한번 줄입니다.
+        List<SimulationDto.AvailableCourseDto> availableCourses = getAvailableCoursesForUser(user, userTracks);
+
+        // [수정] 최종 응답 DTO를 생성할 때, userTracks 정보를 함께 담아줍니다.
         return SimulationDto.SimulationDataResponseDto.builder()
                 .crawlingData(dashboardData)
                 .availableCourses(availableCourses)
+                .userTracks(userTrackDtos)
                 .build();
     }
 
@@ -210,5 +186,56 @@ public class SimulationService {
 
         graduationPlanRepository.delete(plan);
     }
+
+
+    /**
+     * 수강 가능 과목 목록 조회 헬퍼 메소드 (핵심 로직 수정 부분)
+     */
+    private List<SimulationDto.AvailableCourseDto> getAvailableCoursesForUser(Users user, List<UserTrack> userTracks) {
+        Set<String> completedCourseCodes = completedCourseRepository.findByUsers(user).stream()
+                .map(completedCourse -> completedCourse.getCourse().getCourseCode())
+                .collect(Collectors.toSet());
+
+        List<TrackRequirement> trackRequirements = new ArrayList<>();
+        for (UserTrack userTrack : userTracks) {
+            trackRequirements.addAll(trackRequirementRepository.findByTrackId(userTrack.getTrack().getId()));
+        }
+
+        // [수정] 과목(Course)을 기준으로 모든 관련 정보를 List로 그룹핑하여, 더 많은 정보를 한 번에 처리할 수 있도록 구조를 변경했습니다.
+        Map<Course, List<TrackRequirement>> courseToRequirementsMap = trackRequirements.stream()
+                .filter(req -> !"FOUNDATION".equals(req.getCourseType().name()))
+                .collect(Collectors.groupingBy(TrackRequirement::getCourse));
+
+        return courseToRequirementsMap.entrySet().stream()
+                .filter(entry -> !completedCourseCodes.contains(entry.getKey().getCourseCode()))
+                .map(entry -> {
+                    Course course = entry.getKey();
+                    List<TrackRequirement> requirements = entry.getValue();
+
+                    boolean isMandatory = requirements.stream()
+                            .anyMatch(req -> "MANDATORY".equals(req.getCourseType().name()));
+                    String finalCourseType = isMandatory ? "MANDATORY" : "ELECTIVE";
+
+                    // [추가] 그룹핑된 정보를 바탕으로, 해당 과목이 속한 모든 트랙의 ID 목록을 생성합니다.
+                    List<Long> applicableTrackIds = requirements.stream()
+                            .map(req -> req.getTrack().getId())
+                            .distinct()
+                            .collect(Collectors.toList());
+
+                    // [수정] 최종 DTO를 생성할 때, 요청하신 모든 추가 정보를 채워 넣습니다.
+                    return SimulationDto.AvailableCourseDto.builder()
+                            .courseCode(course.getCourseCode())
+                            .courseName(course.getCourseName())
+                            .credit(course.getCredits())
+                            .courseType(finalCourseType)
+                            .openGrade(course.getOpenGrade())             // <-- 추가된 정보
+                            .openSemester(course.getOpenSemester())     // <-- 추가된 정보
+                            .applicableTrackIds(applicableTrackIds)     // <-- 추가된 정보
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+
 }
 
