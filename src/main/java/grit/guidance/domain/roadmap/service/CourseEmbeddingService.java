@@ -275,7 +275,7 @@ public class CourseEmbeddingService {
             
             log.info("트랙 정보 - 1트랙: {}, 2트랙: {}", primaryTrack, secondaryTrack);
             
-            // 4. 검색 쿼리 생성 (1트랙 + 2트랙 + tech_stack 조합, 가중치 적용)
+            // 4. 검색 쿼리 생성 (1트랙 + 2트랙 + tech_stack + 핵심과목 조합, 가중치 적용)
             StringBuilder searchQueryBuilder = new StringBuilder();
             
             // 1트랙 추가 (가중치 높음 - 2번 반복)
@@ -299,6 +299,13 @@ public class CourseEmbeddingService {
                 searchQueryBuilder.append("프로그래밍 개발"); // 기본 검색 쿼리
                 log.info("기본 검색 쿼리 사용: 프로그래밍 개발");
             }
+            
+            // 핵심 과목 추가 (가중치 중간 - 1번씩)
+            String coreSubjects = "프로그래밍랩 컴퓨터구조 프로그래밍언어론 객체지향언어1 자료구조 " +
+                                "객체지향언어2 데이터통신 알고리즘 오픈소스소프트웨어 운영체제 " +
+                                "데이터베이스 소프트웨어공학 설계패턴 네트워크프로그래밍 시스템프로그래밍 컴파일러 정보보안";
+            searchQueryBuilder.append(" ").append(coreSubjects);
+            log.info("핵심 과목 추가: {}", coreSubjects);
             
             String searchQuery = searchQueryBuilder.toString().trim();
             log.info("통합 검색 쿼리 (가중치 적용): {}", searchQuery);

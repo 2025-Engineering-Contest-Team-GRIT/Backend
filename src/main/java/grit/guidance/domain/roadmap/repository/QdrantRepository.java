@@ -269,7 +269,7 @@ public class QdrantRepository {
      */
     public List<Map<String, Object>> searchSimilarCourses(String query, int topK) {
         try {
-            System.out.println("🔍 Qdrant 검색 시작: query='" + query + "', topK=" + topK);
+            System.out.println("Qdrant 검색 시작: query='" + query + "', topK=" + topK);
             
             // 쿼리 텍스트를 벡터로 변환
             List<Double> queryVector = generateEmbedding(query);
