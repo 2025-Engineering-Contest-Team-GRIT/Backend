@@ -8,12 +8,6 @@ spring:
     openai:
       api-key: ${OPENAI_API_KEY:}
 
-# OpenAI API 설정
-openai:
-  api:
-    key: ${OPENAI_API_KEY:}
-    url: ${OPENAI_API_URL:https://api.openai.com}
-
   jackson:
     property-naming-strategy: SNAKE_CASE
     serialization:
@@ -32,6 +26,12 @@ openai:
         highlight_sql: true
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# OpenAI API 설정
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    url: ${OPENAI_API_URL:https://api.openai.com}
 
 management:
   endpoints:
