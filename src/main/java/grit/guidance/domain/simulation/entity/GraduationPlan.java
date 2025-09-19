@@ -24,19 +24,18 @@ public class GraduationPlan extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "graduation_plan_id")
-    private Long id; //졸업 계획 id를 통해 데이터베이스에 저장하고 불러오기가능
+    private Long id;
 
     @Column(name = "plan_name", nullable = false, length = 30)
-    private String planName; //졸업 계획 이름을 설정 ex) 26년 2월 ipp 포함 졸업계획
+    private String planName;
 
-    // 다대일 관계 - graduation_plan과 user (단방향)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private Users users;  //user_id를 외래키로 설정해서 user의 이수과목같은 정보 가져올 수 있음
+    private Users users;
 
-    // 일대다 관계 - graduation_plan과 graduation_plan_course (양방향)
-    @OneToMany(mappedBy = "graduationPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<GraduationPlanCourse> graduationPlanCourses = new ArrayList<>(); //졸업계획과목의 id랑 외래키로 연결함
+    // GraduationPlan이 삭제되면 관련된 GraduationPlanCourse도 함께 삭제되도록 설정합니다.
+    @OneToMany(mappedBy = "graduationPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<GraduationPlanCourse> graduationPlanCourses = new ArrayList<>();
 
     @Builder
     private GraduationPlan(String planName, Users users) {
@@ -44,5 +43,11 @@ public class GraduationPlan extends BaseEntity {
         this.users = users;
     }
 
-
+    /**
+     * 계획 이름을 수정하는 헬퍼(도우미) 메소드
+     */
+    public void updatePlanName(String planName) {
+        this.planName = planName;
+    }
 }
+
