@@ -1,6 +1,7 @@
 package grit.guidance.domain.roadmap.controller;
 
 import grit.guidance.domain.roadmap.service.CourseEmbeddingService;
+import grit.guidance.domain.roadmap.service.RecommendedCourseService;
 import grit.guidance.domain.roadmap.repository.QdrantRepository;
 import grit.guidance.domain.roadmap.dto.SearchRequest;
 import grit.guidance.domain.roadmap.dto.CourseRecommendationRequest;
@@ -25,6 +26,7 @@ public class RoadmapController {
     private static final Logger log = LoggerFactory.getLogger(RoadmapController.class);
     
     private final CourseEmbeddingService courseEmbeddingService;
+    private final RecommendedCourseService recommendedCourseService;
     private final QdrantRepository qdrantRepository;
 
     @PostMapping("/courses/embed")
@@ -140,7 +142,7 @@ public class RoadmapController {
     }
 
     @PostMapping("/courses/roadmap")
-    @Operation(summary = "통합 로드맵 추천", description = "1단계 필수과목 + 2단계 유사도검색 + LLM 로드맵 추천을 통합합니다.")
+    @Operation(summary = "통합 로드맵 추천", description = "1단계 필수과목 + 2단계 유사도검색 + LLM 로드맵 추천을 통합하고 추천 결과를 저장합니다.")
     public ResponseEntity<Map<String, Object>> recommendRoadmap(@RequestBody CourseRecommendationRequest request) {
         try {
             log.info("통합 로드맵 추천 요청: studentId={}, trackIds={}, learningStyle={}, advancedSettings={}",
@@ -150,7 +152,24 @@ public class RoadmapController {
             Map<String, Object> response = courseEmbeddingService.getIntegratedRoadmapRecommendation(
                     request.getTrackIds(), request.getStudentId(), request.getLearningStyle(), request.getAdvancedSettings());
 
-            return ResponseEntity.ok(response);
+            // 추천 결과 저장
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> roadMap = (List<Map<String, Object>>) response.get("roadMap");
+            if (roadMap != null && !roadMap.isEmpty()) {
+                recommendedCourseService.saveRecommendedCourses(
+                        request.getStudentId(), 
+                        request.getTrackIds(), 
+                        roadMap
+                );
+                log.info("로드맵 추천 결과 저장 완료 - studentId: {}", request.getStudentId());
+            }
+
+            // 응답 메시지 수정
+            Map<String, Object> finalResponse = new HashMap<>();
+            finalResponse.put("message", "로드맵이 성공적으로 생성되었습니다.");
+            finalResponse.put("status", "success");
+
+            return ResponseEntity.ok(finalResponse);
 
         } catch (Exception e) {
             log.error("통합 로드맵 추천 실패: trackIds={}, learningStyle={}", request.getTrackIds(), request.getLearningStyle(), e);
