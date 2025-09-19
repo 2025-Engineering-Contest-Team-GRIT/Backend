@@ -39,9 +39,6 @@ public class RecommendedCourse extends BaseEntity {
     @Column(name = "recommended_description", columnDefinition = "TEXT")
     private String recommendDescription; // 추천 이유
 
-    @Column(name = "recommend_year", nullable = false)
-    private Integer recommendYear; // 추천 년도 (예: 2025)
-
     @Column(name = "recommend_grade", nullable = false)
     private Integer recommendGrade; // 추천 학년 (예: 3학년)
 
