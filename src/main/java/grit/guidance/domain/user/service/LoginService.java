@@ -242,6 +242,7 @@ public class LoginService {
             log.info("새 사용자 생성: studentId={}", studentId);
             existingUser = Users.builder()
                     .studentId(studentId)
+                    .name(hansungData.userInfo().name()) // 크롤링된 이름 저장
                     .gpa(BigDecimal.ZERO)
                     .build();
             existingUser = usersRepository.save(existingUser);
@@ -260,7 +261,11 @@ public class LoginService {
         // 3. 시간표 JSON 저장
         existingUser.updateTimetable(hansungData.timetableJson());
         
-        // 4. 학년과 학기 정보 업데이트
+        // 4. 이름, 학년과 학기 정보 업데이트
+        if (hansungData.userInfo().name() != null && !hansungData.userInfo().name().trim().isEmpty()) {
+            existingUser.updateName(hansungData.userInfo().name());
+            log.info("이름 업데이트: {}", hansungData.userInfo().name());
+        }
         if (hansungData.grade() != null) {
             log.info("학년 업데이트: {} -> {}", existingUser.getGrade(), hansungData.grade());
             existingUser.updateGrade(hansungData.grade());

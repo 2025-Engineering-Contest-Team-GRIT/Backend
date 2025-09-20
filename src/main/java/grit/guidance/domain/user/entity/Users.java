@@ -31,6 +31,9 @@ public class Users extends BaseEntity {
     @Column(name = "student_id", nullable = false, unique = true, length = 10)
     private String studentId; // 7자리 학번
 
+    @Column(name = "name", nullable = false, length = 50)
+    private String name; // 사용자 이름
+
     @Column(name = "GPA", nullable = false, precision = 3, scale = 2)
     private BigDecimal gpa = BigDecimal.ZERO; // 0.0-4.5 범위
 
@@ -67,8 +70,9 @@ public class Users extends BaseEntity {
     private List<FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    public Users(String studentId, BigDecimal gpa, Integer earnedCredits, String timetable, LocalDateTime lastCrawlTime, Integer grade, Semester semester) {
+    public Users(String studentId, String name, BigDecimal gpa, Integer earnedCredits, String timetable, LocalDateTime lastCrawlTime, Integer grade, Semester semester) {
         this.studentId = studentId;
+        this.name = name != null ? name : "";
         this.gpa = gpa != null ? gpa : BigDecimal.ZERO;
         this.earnedCredits = earnedCredits != null ? earnedCredits : 0;
         this.timetable = timetable;
@@ -112,6 +116,13 @@ public class Users extends BaseEntity {
             throw new IllegalArgumentException("학기는 null일 수 없습니다.");
         }
         this.semester = semester;
+    }
+
+    public void updateName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("이름은 null이거나 빈 문자열일 수 없습니다.");
+        }
+        this.name = name.trim();
     }
 }
 
