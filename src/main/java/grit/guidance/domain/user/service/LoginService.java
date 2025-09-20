@@ -16,7 +16,6 @@ import grit.guidance.domain.user.repository.UserTrackRepository;
 import grit.guidance.global.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,22 +25,31 @@ import java.util.Map;
 import java.util.Optional;
 import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
 import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginService {
 
-    private final UsersCrawlingService crawlingService;
     private final UsersRepository usersRepository;
     private final UserTrackRepository userTrackRepository;
     private final CompletedCourseRepository completedCourseRepository;
     private final EnrolledCourseRepository enrolledCourseRepository;
     private final CourseRepository courseRepository;
     private final TrackRepository trackRepository;
-    private final JwtService jwtService;
-    private final CrawlingConditionService crawlingConditionService;
     private final CrawlingGraduationRepository crawlingGraduationRepository; // ⭐ 추가: CrawlingGraduation 리포지토리
     private final GraduationRequirementRepository graduationRequirementRepository;
+    private final RestTemplate restTemplate;
+    private final JwtService jwtService;
+    private final UsersCrawlingService crawlingService;
+    private final CrawlingConditionService crawlingConditionService;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -55,39 +63,107 @@ public class LoginService {
             String studentId = request.studentId().trim();
             String password = request.password().trim();
             
-            // 2. 기존 사용자 조회
+            // 2. 한성대 포털 로그인 검증 (크롤링 없이 로그인만 확인)
+            boolean loginSuccess = validateHansungLogin(studentId, password);
+            if (!loginSuccess) {
+                throw new IllegalArgumentException("잘못된 비밀번호입니다.");
+            }
+            
+            // 3. 기존 사용자 조회
             Users existingUser = usersRepository.findByStudentId(studentId).orElse(null);
             
-            // 3. 크롤링 필요 여부 확인
-            boolean shouldCrawl = crawlingConditionService.shouldCrawl(existingUser);
+            // 4. 신규/기존 사용자 구분
+            boolean isNewUser = (existingUser == null);
             
-            if (shouldCrawl) {
-                // 4. 크롤링이 필요한 경우에만 크롤링 실행
-                log.info("크롤링 실행: studentId={}", studentId);
-                HansungDataResponse hansungData = crawlingService.fetchHansungData(studentId, password);
-                
-                // 5. 크롤링 성공 시 사용자 정보 저장/업데이트
-                // saveOrUpdateUser(studentId, hansungData);
-                saveOrUpdateAllUserData(studentId, hansungData);
-            } else {
-                log.info("크롤링 생략: studentId={}", studentId);
-                // 크롤링이 필요 없는 경우 기존 사용자 정보로 로그인 처리
-                if (existingUser == null) {
-                    throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
+            // 5. 기존 사용자인 경우 shouldCrawl 체크 후 크롤링
+            if (!isNewUser) {
+                boolean shouldCrawl = crawlingConditionService.shouldCrawl(existingUser);
+                if (shouldCrawl) {
+                    log.info("기존 사용자 크롤링 실행: studentId={}", studentId);
+                    try {
+                        var hansungData = crawlingService.fetchHansungData(studentId, password);
+                        saveOrUpdateAllUserData(studentId, hansungData);
+                        log.info("기존 사용자 크롤링 완료: studentId={}", studentId);
+                    } catch (Exception e) {
+                        log.error("기존 사용자 크롤링 실패: studentId={}, error={}", studentId, e.getMessage());
+                        // 크롤링 실패해도 로그인은 진행
+                    }
+                } else {
+                    log.info("기존 사용자 크롤링 생략: studentId={}", studentId);
                 }
             }
-
+            
             // 6. JWT 토큰 생성
             String accessToken = jwtService.generateToken(studentId);
-
-            return new LoginResponse(HttpStatus.CREATED.value(), accessToken);
+            
+            log.info("로그인 성공: studentId={}, isNewUser={}", studentId, isNewUser);
+            
+            return new LoginResponse(200, isNewUser, accessToken);
 
         } catch (IllegalArgumentException e) {
-            // 잘못된 비밀번호 등의 경우
-            throw new IllegalArgumentException("잘못된 비밀번호입니다.");
+            throw e; // 그대로 전달
         } catch (Exception e) {
-            // 기타 오류 (학번이 존재하지 않는 경우 등)
-            throw new RuntimeException("회원 정보를 찾을 수 없습니다.");
+            log.error("로그인 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("서버 오류가 발생했습니다.");
+        }
+    }
+    
+    /**
+     * 한성대 포털 로그인 검증 (크롤링 없이 로그인만 확인)
+     */
+    private boolean validateHansungLogin(String studentId, String password) {
+        try {
+            // 한성대 포털에 로그인 시도
+            HttpHeaders loginHeaders = new HttpHeaders();
+            loginHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            MultiValueMap<String, String> loginBody = new LinkedMultiValueMap<>();
+            loginBody.add("id", studentId);
+            loginBody.add("passwd", password);
+            HttpEntity<MultiValueMap<String, String>> loginRequest = new HttpEntity<>(loginBody, loginHeaders);
+
+            ResponseEntity<String> loginResponse = restTemplate.postForEntity(
+                    "https://info.hansung.ac.kr/servlet/s_gong.gong_login_ssl",
+                    loginRequest,
+                    String.class
+            );
+            
+            // ssotoken 쿠키 확인으로 로그인 성공 여부 판단
+            List<String> cookies = loginResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+            boolean loginSuccess = cookies != null && cookies.stream().anyMatch(c -> c.contains("ssotoken"));
+            
+            if (loginSuccess) {
+                // 로그인 성공 시 세션 정리
+                String sessionCookie = String.join("; ", cookies);
+                logoutFromHansung(sessionCookie);
+            }
+            
+            return loginSuccess;
+            
+        } catch (Exception e) {
+            log.error("한성대 포털 로그인 검증 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * 한성대 사이트에서 로그아웃 처리
+     */
+    private void logoutFromHansung(String sessionCookie) {
+        try {
+            HttpHeaders logoutHeaders = new HttpHeaders();
+            logoutHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+            logoutHeaders.add(HttpHeaders.REFERER, "https://info.hansung.ac.kr/index.jsp");
+            
+            restTemplate.exchange(
+                "https://info.hansung.ac.kr/servlet/s_gong.gong_logout",
+                HttpMethod.GET,
+                new HttpEntity<>(logoutHeaders),
+                String.class
+            );
+            
+            log.info("한성대 사이트 로그아웃 완료");
+        } catch (Exception e) {
+            log.warn("한성대 사이트 로그아웃 실패: {}", e.getMessage());
         }
     }
 
@@ -503,4 +579,5 @@ public class LoginService {
         log.info("수강 과목 저장 완료 - 저장됨: {}, 찾을 수 없음: {}, 전체: {}", 
                 savedCount, notFoundCount, enrolledCourseNames.size());
     }
+    
 }

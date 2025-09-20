@@ -24,11 +24,11 @@ public class LoginController {
     private final LoginService loginService;
 
     @PostMapping("/login")
-    @Operation(summary = "로그인", description = "기존 사용자면 초기 화면 정보를 전달")
+    @Operation(summary = "로그인", description = "한성대 포털 로그인 검증 및 신규/기존 사용자 구분")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "로그인 성공"),
+        @ApiResponse(responseCode = "200", description = "로그인 성공 - 신규/기존 사용자 정보 반환"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (사용자 이름/비밀번호 누락 또는 잘못된 비밀번호)"),
-        @ApiResponse(responseCode = "404", description = "회원 정보를 찾을 수 없습니다")
+        @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         try {
@@ -36,15 +36,15 @@ public class LoginController {
             clearExistingCookies(response);
             
             LoginResponse loginResponse = loginService.login(request);
-            return ResponseEntity.status(loginResponse.status()).body(loginResponse);
+            return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             // 400 Bad Request
             ErrorResponse errorResponse = new ErrorResponse(400, e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
-        } catch (RuntimeException e) {
-            // 404 Not Found
-            ErrorResponse errorResponse = new ErrorResponse(404, e.getMessage());
-            return ResponseEntity.status(404).body(errorResponse);
+        } catch (Exception e) {
+            // 500 Internal Server Error
+            ErrorResponse errorResponse = new ErrorResponse(500, "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
