@@ -1,5 +1,6 @@
 package grit.guidance.domain.user.entity;
 
+import grit.guidance.domain.course.entity.Semester;
 import grit.guidance.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -42,6 +43,13 @@ public class Users extends BaseEntity {
     @Column(name = "last_crawl_time")
     private LocalDateTime lastCrawlTime; // 마지막 크롤링 시간
 
+    @Column(name = "grade", nullable = false)
+    private Integer grade; // 학년
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "semester", nullable = false)
+    private Semester semester; // 학기
+
     // 1:1 관계 - users와 setting (양방향)
     @OneToOne(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Setting setting;
@@ -59,12 +67,14 @@ public class Users extends BaseEntity {
     private List<FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder
-    public Users(String studentId, BigDecimal gpa, Integer earnedCredits, String timetable, LocalDateTime lastCrawlTime) {
+    public Users(String studentId, BigDecimal gpa, Integer earnedCredits, String timetable, LocalDateTime lastCrawlTime, Integer grade, Semester semester) {
         this.studentId = studentId;
         this.gpa = gpa != null ? gpa : BigDecimal.ZERO;
         this.earnedCredits = earnedCredits != null ? earnedCredits : 0;
         this.timetable = timetable;
         this.lastCrawlTime = lastCrawlTime;
+        this.grade = grade != null ? grade : 1;
+        this.semester = semester != null ? semester : Semester.FIRST;
     }
 
     // 비즈니스 메서드
@@ -88,6 +98,20 @@ public class Users extends BaseEntity {
     
     public void updateLastCrawlTime() {
         this.lastCrawlTime = LocalDateTime.now();
+    }
+
+    public void updateGrade(Integer grade) {
+        if (grade < 1 || grade > 4) {
+            throw new IllegalArgumentException("학년은 1-4 범위여야 합니다.");
+        }
+        this.grade = grade;
+    }
+
+    public void updateSemester(Semester semester) {
+        if (semester == null) {
+            throw new IllegalArgumentException("학기는 null일 수 없습니다.");
+        }
+        this.semester = semester;
     }
 }
 
