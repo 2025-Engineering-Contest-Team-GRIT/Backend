@@ -16,7 +16,7 @@ services:
       - web # web 네트워크 연결
     environment:
       - TRAEFIK_DASHBOARD_AUTH=admin:$$apr1$$HtfOXLKL$$QMj0r2dHvy0FnkLG.STWR1 # 대시보드 인증 정보 (admin/mypassword)
-    # labels:
+      # labels:
       # 대시보드는 직접 포트로 접근
   db:
     image: postgres:15
@@ -30,7 +30,7 @@ services:
       TZ: Asia/Seoul
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./logs/postgres:/var/log/postgresql # 로그 마운트
+      # - ./logs/postgres:/var/log/postgresql # 로그 마운트 (권한 문제로 주석 처리)
     networks:
       - backend
     healthcheck:
@@ -41,11 +41,7 @@ services:
     command:
       - postgres
       - "-c"
-      - "logging_collector=on"
-      - "-c"
-      - "log_directory=/var/log/postgresql"
-      - "-c"
-      - "log_filename=postgresql.log"
+      - "logging_collector=off"
       - "-c"
       - "log_statement=all"
       - "-c"
