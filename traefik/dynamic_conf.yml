@@ -1,0 +1,32 @@
+http:
+  routers:
+    spring-app-router: # 라우터 이름 명확화 (선택 사항)
+      # Host 규칙은 정확히 api.rexume.site 만을 대상으로 함
+      # PathPrefix 규칙도 유지
+      rule: "Host(`localhost`) && PathPrefix(`/api`)"
+      entryPoints:
+        - web # HTTP (80) 엔트리포인트 사용
+      service: spring-app-service # 서비스 이름 명확화 (선택 사항)
+      middlewares:
+        - rate-limit # 적용할 미들웨어
+
+
+  services:
+    spring-app-service: # 서비스 이름 명확화 (선택 사항)
+      loadBalancer:
+        servers:
+          # 백엔드 서비스 컨테이너의 이름과 포트를 Docker 네트워크 기준으로 지정
+          - url: "http://backend:8080"
+
+  middlewares:
+    # 대시보드 인증 미들웨어 정의 (실제 사용은 Traefik API 라우터 설정에서 필요 시 적용)
+    dashboard-auth:
+      basicAuth:
+        users:
+          - "${TRAEFIK_DASHBOARD_AUTH}"
+
+    # Rate Limit 미들웨어 정의
+    rate-limit:
+      rateLimit:
+        average: 50
+        burst: 100

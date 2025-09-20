@@ -1,7 +1,23 @@
-
-version: "3.9"
-
 services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8088:8088"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
+      - ./traefik/letsencrypt:/etc/traefik # letsencrypt 데이터용 디렉토리 마운트
+    networks:
+      - web # web 네트워크 연결
+    environment:
+      - TRAEFIK_DASHBOARD_AUTH=admin:$$apr1$$HtfOXLKL$$QMj0r2dHvy0FnkLG.STWR1 # 대시보드 인증 정보 (admin/mypassword)
+    # labels:
+      # 대시보드는 직접 포트로 접근
   db:
     image: postgres:15
     container_name: postgres
@@ -63,9 +79,16 @@ services:
       - "8080:8080"
     networks:
       - backend
+      - web
     restart: unless-stopped
     env_file:
       - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.middlewares=rate-limit@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
 
 volumes:
   postgres_data:
@@ -74,5 +97,7 @@ volumes:
 networks:
   backend:
     name: backend
+  web:
+    external: true
 
 
