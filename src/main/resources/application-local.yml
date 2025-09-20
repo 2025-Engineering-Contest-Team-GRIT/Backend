@@ -5,16 +5,16 @@ spring:
   ai:
     vectorstore:
       qdrant:
-        host: qdrant
+        host: localhost
         port: 6333
         collection: test_collection
     openai:
       api-key: ${OPENAI_API_KEY:}
 
   datasource:
-    url: ${POSTGRES_URL:jdbc:postgresql://db:5432/database}
-    username: ${POSTGRES_USER:sa}
-    password: ${POSTGRES_PASSWORD:1234}
+    url: jdbc:postgresql://localhost:5432/database
+    username: sa
+    password: 1234
     driver-class-name: org.postgresql.Driver
 
   jpa:
