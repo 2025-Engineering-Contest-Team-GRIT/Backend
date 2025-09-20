@@ -6,7 +6,7 @@ entryPoints:
 
 api:
   dashboard: true
-  insecure: true # true로 변경하면 대시보드 접근 시 인증 불필요 (테스트 용도)
+  insecure: false # 배포용으로 인증 활성화
 
 log:
   level: INFO # DEBUG 로 변경하면 더 상세한 로그 확인 가능
