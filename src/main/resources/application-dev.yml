@@ -5,11 +5,11 @@ spring:
   ai:
     vectorstore:
       qdrant:
-        host: localhost
+        host: qdrant
         port: 6333
         collection: test_collection
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:}
 
   datasource:
     url: ${POSTGRES_URL:jdbc:postgresql://db:5432/database}

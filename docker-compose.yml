@@ -17,6 +17,11 @@ services:
       - ./logs/postgres:/var/log/postgresql # 로그 마운트
     networks:
       - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sa -d database" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     command:
       - postgres
       - "-c"
@@ -52,7 +57,8 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:
