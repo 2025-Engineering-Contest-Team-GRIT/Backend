@@ -2,6 +2,7 @@ package grit.guidance.domain.user.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import grit.guidance.domain.course.entity.Semester;
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,12 @@ public class UsersCrawlingService {
         String gradePageHtml = new String(gradePageResponse.getBody(), Charset.forName("euc-kr"));
         TotalGradeResponse grades = parseGradeHtml(gradePageHtml);
         MajorRequiredCreditsResponse majorCredits = parseMajorRequiredCredits(Jsoup.parse(gradePageHtml));
+        
+        // 학년과 학기 정보 파싱
+        log.info("학년과 학기 정보 파싱 시작");
+        Integer grade = parseGradeFromHtml(gradePageHtml);
+        Semester semester = calculateCurrentSemester();
+        log.info("파싱된 학년: {}, 학기: {}", grade, semester);
 
         // 4. 시간표 데이터 크롤링
         List<String> enrolledCourseNames = crawlEnrolledCourses(studentId, sessionCookie);
@@ -94,7 +102,9 @@ public class UsersCrawlingService {
                 grades,
                 majorCredits,
                 enrolledCourseNames,
-                timetableJson
+                timetableJson,
+                grade,
+                semester
         );
 
         // 6. 한성대 사이트 로그아웃 (세션 정리)
@@ -202,6 +212,53 @@ public class UsersCrawlingService {
             }
         }
         return new UserInfoResponse(null, new ArrayList<>());
+    }
+
+    /**
+     * 성적 페이지에서 학년 정보를 파싱
+     */
+    private Integer parseGradeFromHtml(String html) {
+        Document doc = Jsoup.parse(html);
+        // "변정원 (2271187) 컴퓨터공학부 3 학년 복학" 형태에서 학년 추출
+        Element strongElement = doc.selectFirst("strong.objHeading_h3");
+        if (strongElement != null) {
+            String text = strongElement.text();
+            log.info("학년 파싱 시도 - 찾은 텍스트: {}", text);
+            // 정규식으로 "숫자 학년" 패턴 찾기
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)\\s*학년");
+            java.util.regex.Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                Integer grade = Integer.parseInt(matcher.group(1));
+                log.info("파싱된 학년: {}", grade);
+                return grade;
+            } else {
+                log.warn("학년 패턴을 찾을 수 없음: {}", text);
+            }
+        } else {
+            log.warn("strong.objHeading_h3 요소를 찾을 수 없음");
+        }
+        return null;
+    }
+
+    /**
+     * 현재 날짜를 기준으로 학기 계산
+     * 3월 2일부터 9월 1일 전까지는 1학기, 9월 1일부터 3월 2일 전까지는 2학기
+     */
+    private Semester calculateCurrentSemester() {
+        LocalDate now = LocalDate.now();
+        int month = now.getMonthValue();
+        int day = now.getDayOfMonth();
+        
+        log.info("현재 날짜: {}월 {}일", month, day);
+        
+        // 3월 2일부터 9월 1일 전까지는 1학기
+        if ((month == 3 && day >= 2) || (month > 3 && month < 9) || (month == 9 && day < 1)) {
+            log.info("계산된 학기: 1학기");
+            return Semester.FIRST;
+        } else {
+            log.info("계산된 학기: 2학기");
+            return Semester.SECOND;
+        }
     }
 
     private TotalGradeResponse parseGradeHtml(String html) throws Exception {

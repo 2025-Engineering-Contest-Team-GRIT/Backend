@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
 import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
 import org.springframework.http.HttpEntity;
@@ -258,9 +259,21 @@ public class LoginService {
 
         // 3. 시간표 JSON 저장
         existingUser.updateTimetable(hansungData.timetableJson());
+        
+        // 4. 학년과 학기 정보 업데이트
+        if (hansungData.grade() != null) {
+            log.info("학년 업데이트: {} -> {}", existingUser.getGrade(), hansungData.grade());
+            existingUser.updateGrade(hansungData.grade());
+        }
+        if (hansungData.semester() != null) {
+            log.info("학기 업데이트: {} -> {}", existingUser.getSemester(), hansungData.semester());
+            existingUser.updateSemester(hansungData.semester());
+        }
+        
         usersRepository.save(existingUser);
         log.info("GPA 및 취득학점 저장 완료: studentId={}, gpa={}, earnedCredits={}", studentId, gpa, earnedCredits);
         log.info("시간표 JSON 저장 완료: studentId={}", studentId);
+        log.info("학년/학기 저장 완료: studentId={}, grade={}, semester={}", studentId, existingUser.getGrade(), existingUser.getSemester());
 
         // 4. 완료된 과목들 저장
         saveCompletedCourses(existingUser, hansungData.grades().semesters());
@@ -417,10 +430,20 @@ public class LoginService {
         int savedCount = 0;
         int notFoundCount = 0;
         
+        // 학년도 기준으로 학년 계산을 위한 연도 리스트 생성
+        List<Integer> years = semesters.stream()
+                .map(s -> extractYearFromSemesterName(s.semester()))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        
         for (SemesterGradeResponse semester : semesters) {
             // 학기명에서 연도와 학기 추출 (예: "2024년 1학기" -> 2024, 1)
             int year = extractYearFromSemesterName(semester.semester());
             Semester semesterEnum = extractSemesterFromSemesterName(semester.semester());
+            
+            // 학년도 기준으로 학년 계산 (가장 오래된 연도 = 1학년)
+            int gradeLevel = calculateGradeLevelByYear(year, years);
             
             for (CourseGradeResponse course : semester.courses()) {
                 // 과목 코드로 Course 엔티티 찾기
@@ -442,7 +465,7 @@ public class LoginService {
                         .course(courseEntity)
                         .track(track) // 사용자의 Primary/Secondary 트랙 정보
                         .completedYear(year)
-                        .gradeLevel(courseEntity.getOpenGrade()) // 과목의 개설학년 사용
+                        .gradeLevel(gradeLevel) // 학년도 기준으로 계산된 학년 사용
                         .completedSemester(semesterEnum)
                         .completedGrade(completedGrade) // CompletedGrade enum 저장
                         .gradePoint(completedGrade.getGradePoint()) // 성적 평점 저장
@@ -578,6 +601,33 @@ public class LoginService {
         
         log.info("수강 과목 저장 완료 - 저장됨: {}, 찾을 수 없음: {}, 전체: {}", 
                 savedCount, notFoundCount, enrolledCourseNames.size());
+    }
+    
+    /**
+     * 학년도 기준으로 학년을 계산합니다.
+     * 가장 오래된 학년도 = 1학년, 그 다음 = 2학년, ...
+     * 
+     * @param year 계산할 연도
+     * @param years 정렬된 연도 리스트 (오래된 순)
+     * @return 계산된 학년 (1-4)
+     */
+    private int calculateGradeLevelByYear(int year, List<Integer> years) {
+        int index = years.indexOf(year);
+        if (index == -1) {
+            log.warn("연도 {}가 리스트에 없습니다. 1학년으로 처리합니다.", year);
+            return 1;
+        }
+        
+        int gradeLevel = index + 1;
+        
+        // 4학년을 초과하는 경우 4학년으로 제한
+        if (gradeLevel > 4) {
+            log.warn("계산된 학년 {}이 4를 초과합니다. 4학년으로 제한합니다.", gradeLevel);
+            return 4;
+        }
+        
+        log.debug("연도 {} -> {}학년", year, gradeLevel);
+        return gradeLevel;
     }
     
 }

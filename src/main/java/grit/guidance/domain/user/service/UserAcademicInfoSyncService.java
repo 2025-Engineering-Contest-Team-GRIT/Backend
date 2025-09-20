@@ -58,14 +58,31 @@ public class UserAcademicInfoSyncService {
             Users users = usersRepository.findByStudentId(studentId)
                     .orElseGet(() -> usersRepository.save(Users.builder().studentId(studentId).build()));
 
-            // 3. 사용자 정보(GPA, 취득학점, 시간표) 업데이트
+            // 3. 사용자 정보(GPA, 취득학점, 시간표, 학년, 학기) 업데이트
             users.updateGpa(parseGpa(crawledData.grades().creditSummary()));
             users.updateEarnedCredits(parseEarnedCredits(crawledData.grades().creditSummary()));
             users.updateTimetable(crawledData.timetableJson());
+            
+            log.info("크롤링된 학년: {}, 학기: {}", crawledData.grade(), crawledData.semester());
+            
+            if (crawledData.grade() != null) {
+                log.info("학년 업데이트 실행: {} -> {}", users.getGrade(), crawledData.grade());
+                users.updateGrade(crawledData.grade());
+            } else {
+                log.warn("크롤링된 학년이 null입니다!");
+            }
+            if (crawledData.semester() != null) {
+                log.info("학기 업데이트 실행: {} -> {}", users.getSemester(), crawledData.semester());
+                users.updateSemester(crawledData.semester());
+            } else {
+                log.warn("크롤링된 학기가 null입니다!");
+            }
             users.updateLastCrawlTime();
             log.info("{} 학생의 GPA 정보를 {}로 업데이트했습니다.", users.getStudentId(), users.getGpa());
             log.info("{} 학생의 취득학점을 {}로 업데이트했습니다.", users.getStudentId(), users.getEarnedCredits());
             log.info("{} 학생의 시간표 정보를 업데이트했습니다.", users.getStudentId());
+            log.info("{} 학생의 학년을 {}로 업데이트했습니다.", users.getStudentId(), users.getGrade());
+            log.info("{} 학생의 학기를 {}로 업데이트했습니다.", users.getStudentId(), users.getSemester());
 
             // 4. 기존 이수 내역 및 트랙 정보 삭제 (최신 정보로 덮어쓰기 위해)
             completedCourseRepository.deleteByUsers(users);
@@ -190,6 +207,13 @@ public class UserAcademicInfoSyncService {
 
     // ⭐ saveCompletedCourses 메서드 수정
     private void saveCompletedCourses(Users user, List<SemesterGradeResponse> semesters) {
+        // 학년도 기준으로 학년 계산을 위한 연도 리스트 생성
+        List<Integer> years = semesters.stream()
+                .map(s -> parseYearFromSemesterString(s.semester()))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        
         List<CompletedCourse> newCompletedCourses = semesters.stream()
                 .flatMap(semester -> semester.courses().stream()
                         .map(courseGrade -> {
@@ -217,14 +241,18 @@ public class UserAcademicInfoSyncService {
                                 }
 
                                 CompletedGrade gradeEnum = parseGradeFromString(courseGrade.grade());
+                                
+                                // 학년도 기준으로 학년 계산
+                                int year = parseYearFromSemesterString(semester.semester());
+                                int gradeLevel = calculateGradeLevelByYear(year, years);
 
                                 // CompletedCourse 엔티티 생성
                                 return CompletedCourse.builder()
                                         .users(user)
                                         .course(course)
                                         .track(track) // 파싱된 Track 엔티티를 저장
-                                        .completedYear(parseYearFromSemesterString(semester.semester()))
-                                        .gradeLevel(course.getOpenGrade()) // 이수학년은 과목의 개설학년으로 저장
+                                        .completedYear(year)
+                                        .gradeLevel(gradeLevel) // 학년도 기준으로 계산된 학년 사용
                                         .completedSemester(parseSemesterFromSemesterString(semester.semester()))
                                         .completedGrade(gradeEnum)
                                         .gradePoint(gradeEnum.getGradePoint())
@@ -338,5 +366,32 @@ public class UserAcademicInfoSyncService {
                     .orElse(null);
         }
         return null;
+    }
+    
+    /**
+     * 학년도 기준으로 학년을 계산합니다.
+     * 가장 오래된 학년도 = 1학년, 그 다음 = 2학년, ...
+     * 
+     * @param year 계산할 연도
+     * @param years 정렬된 연도 리스트 (오래된 순)
+     * @return 계산된 학년 (1-4)
+     */
+    private int calculateGradeLevelByYear(int year, List<Integer> years) {
+        int index = years.indexOf(year);
+        if (index == -1) {
+            log.warn("연도 {}가 리스트에 없습니다. 1학년으로 처리합니다.", year);
+            return 1;
+        }
+        
+        int gradeLevel = index + 1;
+        
+        // 4학년을 초과하는 경우 4학년으로 제한
+        if (gradeLevel > 4) {
+            log.warn("계산된 학년 {}이 4를 초과합니다. 4학년으로 제한합니다.", gradeLevel);
+            return 4;
+        }
+        
+        log.debug("연도 {} -> {}학년", year, gradeLevel);
+        return gradeLevel;
     }
 }
