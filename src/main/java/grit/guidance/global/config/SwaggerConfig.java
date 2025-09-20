@@ -3,9 +3,12 @@ package grit.guidance.global.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
@@ -25,6 +28,10 @@ public class SwaggerConfig {
                         .title("Spring API 문서")
                         .version("v1.0")
                         .description("Spring Boot 기반 API 문서 입니다.")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                .servers(List.of(
+                        new Server().url("https://api.guidance.cloud").description("Production Server"),
+                        new Server().url("http://localhost:8080").description("Local Development Server")
+                ));
     }
 }
