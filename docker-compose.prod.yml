@@ -1,0 +1,19 @@
+# 배포용 Docker Compose 설정
+# 사용법: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+
+services:
+  traefik:
+    labels:
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.guidance.cloud`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+
+  backend:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.guidance.cloud`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend.middlewares=rate-limit@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"

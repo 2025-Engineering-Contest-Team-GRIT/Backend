@@ -1,0 +1,17 @@
+# 로컬 개발용 오버라이드 설정
+# docker compose up 실행 시 자동으로 적용됨
+
+services:
+  traefik:
+    labels:
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=dashboard"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+
+  backend:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.middlewares=rate-limit@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
