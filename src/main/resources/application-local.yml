@@ -1,0 +1,28 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  ai:
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6333
+        collection: test_collection
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/database
+    username: sa
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        highlight_sql: true
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
