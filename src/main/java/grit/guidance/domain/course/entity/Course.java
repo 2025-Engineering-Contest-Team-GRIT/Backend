@@ -45,6 +45,8 @@ public class Course extends BaseEntity {
     @Column(name = "open_semester", nullable = false)
     private Semester openSemester;
 
+
+
     // 1:N 관계 - course와 completed_course (양방향)
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<grit.guidance.domain.user.entity.CompletedCourse> completedCourses = new ArrayList<>();
