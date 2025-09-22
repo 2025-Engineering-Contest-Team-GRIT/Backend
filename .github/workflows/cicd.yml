@@ -101,11 +101,11 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         source: |
-          ./traefik/traefik.yml
-          ./traefik/dynamic_conf.yml
-          ./traefik/letsencrypt
-          ./docker-compose.prod.yml
+          traefik/**
+          docker-compose.prod.yml
         target: "/home/ymkim2353"
+        overwrite: true
+        
 
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.3
