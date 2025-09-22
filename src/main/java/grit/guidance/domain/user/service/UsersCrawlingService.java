@@ -411,6 +411,7 @@ public class UsersCrawlingService {
                     "",
                     "",
                     "",
+                    "",
                     ""
             );
         }
@@ -433,12 +434,18 @@ public class UsersCrawlingService {
             classroom = parts[2].trim();
         }
 
+        // 날짜에서 요일 계산 및 시간 형식 변경
+        String day = extractDayFromDateTime(event.start());
+        String startTime = extractTimeFromDateTime(event.start());
+        String endTime = extractTimeFromDateTime(event.end());
+
         return new TimetableDetailDto(
                 courseName,
                 professorName,
                 classroom,
-                event.start() != null ? event.start() : "",
-                event.end() != null ? event.end() : ""
+                day,
+                startTime,
+                endTime
         );
     }
 
@@ -454,5 +461,56 @@ public class UsersCrawlingService {
         }
 
         return title.trim();
+    }
+    
+    /**
+     * 날짜시간 문자열에서 요일을 추출합니다.
+     * 예: "2025-09-18T10:30:00" -> "목"
+     */
+    private String extractDayFromDateTime(String dateTime) {
+        if (dateTime == null || dateTime.trim().isEmpty()) {
+            return "";
+        }
+        
+        try {
+            // "2025-09-18T10:30:00" 형태에서 날짜 부분만 추출
+            String datePart = dateTime.split("T")[0];
+            LocalDate date = LocalDate.parse(datePart);
+            
+            // 요일을 한글로 변환
+            return switch (date.getDayOfWeek()) {
+                case MONDAY -> "월";
+                case TUESDAY -> "화";
+                case WEDNESDAY -> "수";
+                case THURSDAY -> "목";
+                case FRIDAY -> "금";
+                case SATURDAY -> "토";
+                case SUNDAY -> "일";
+            };
+        } catch (Exception e) {
+            log.warn("날짜 파싱 실패: {}", dateTime);
+            return "";
+        }
+    }
+    
+    /**
+     * 날짜시간 문자열에서 시간만 추출합니다.
+     * 예: "2025-09-18T10:30:00" -> "10:30:00"
+     */
+    private String extractTimeFromDateTime(String dateTime) {
+        if (dateTime == null || dateTime.trim().isEmpty()) {
+            return "";
+        }
+        
+        try {
+            // "2025-09-18T10:30:00" 형태에서 시간 부분만 추출
+            if (dateTime.contains("T")) {
+                return dateTime.split("T")[1];
+            }
+            return dateTime;
+        } catch (Exception e) {
+            log.warn("시간 파싱 실패: {}", dateTime);
+            return "";
+        }
     }
 }

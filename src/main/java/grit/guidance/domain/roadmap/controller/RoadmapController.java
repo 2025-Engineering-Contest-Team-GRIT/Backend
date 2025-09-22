@@ -5,18 +5,27 @@ import grit.guidance.domain.roadmap.service.RecommendedCourseService;
 import grit.guidance.domain.roadmap.repository.QdrantRepository;
 import grit.guidance.domain.roadmap.dto.SearchRequest;
 import grit.guidance.domain.roadmap.dto.CourseRecommendationRequest;
+import grit.guidance.domain.roadmap.dto.RoadmapResponseDto;
+import grit.guidance.domain.roadmap.service.RoadmapService;
+import grit.guidance.global.jwt.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 
+@Slf4j
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/roadmap")
@@ -28,6 +37,8 @@ public class RoadmapController {
     private final CourseEmbeddingService courseEmbeddingService;
     private final RecommendedCourseService recommendedCourseService;
     private final QdrantRepository qdrantRepository;
+    private final RoadmapService roadmapService;
+    private final JwtService jwtService;
 
     @PostMapping("/courses/embed")
     @Operation(summary = "과목 데이터 벡터화 및 저장", description = "Course 테이블의 모든 과목을 Qdrant에 벡터화하여 저장합니다.")
@@ -113,7 +124,7 @@ public class RoadmapController {
 
             // 1단계: 필수 과목 목록 확보 (규칙 기반 필터링)
             List<Map<String, Object>> mandatoryCourses = courseEmbeddingService.getMandatoryCourses(request.getTrackIds(), request.getStudentId());
-            
+
             // 2단계: 벡터 DB 검색 목록 확보 (유사도 검색)
             List<Map<String, Object>> recommendedCourses = courseEmbeddingService.getRecommendedCourses(
                     request.getTrackIds(), request.getStudentId(), request.getLearningStyle(), request.getAdvancedSettings());
@@ -208,6 +219,60 @@ public class RoadmapController {
                     "error", e.getMessage(),
                     "status", "error"
             ));
+        }
+    }
+
+    // 새로 추가된 GET /roadmaps 엔드포인트
+    @GetMapping("/roadmaps")
+    @Operation(summary = "로드맵 조회", description = "사용자의 전체 로드맵 정보를 조회합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "로드맵 정보 조회 성공"),
+        @ApiResponse(responseCode = "401", description = "로그인이 필요합니다"),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    public ResponseEntity<RoadmapResponseDto> getRoadmap(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            HttpServletRequest request) {
+        
+        try {
+            log.info("로드맵 요청 - Authorization 헤더: {}", authorization);
+            
+            // JWT 토큰 검증
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                log.warn("Authorization 헤더가 없거나 Bearer 형식이 아님: {}", authorization);
+                return ResponseEntity.status(401).body(RoadmapResponseDto.unauthorized());
+            }
+
+            String token = authorization.substring(7); // "Bearer " 제거
+            log.info("추출된 토큰: {}", token);
+            
+            // 토큰 유효성 검증
+            if (!jwtService.validateToken(token)) {
+                log.warn("토큰 유효성 검증 실패");
+                return ResponseEntity.status(401).body(RoadmapResponseDto.unauthorized());
+            }
+            
+            String studentId = jwtService.getStudentIdFromToken(token);
+            log.info("토큰에서 추출된 학번: {}", studentId);
+            
+            if (studentId == null || studentId.trim().isEmpty()) {
+                log.warn("학번이 null이거나 빈 문자열");
+                return ResponseEntity.status(401).body(RoadmapResponseDto.unauthorized());
+            }
+
+            // 로드맵 데이터 조회
+            RoadmapResponseDto response = roadmapService.getRoadmapData(studentId);
+            
+            if (response.status() == 200) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(response.status()).body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("로드맵 API 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(RoadmapResponseDto.serverError());
         }
     }
 }

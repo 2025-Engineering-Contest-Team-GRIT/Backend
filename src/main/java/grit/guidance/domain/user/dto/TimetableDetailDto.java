@@ -11,6 +11,9 @@ public record TimetableDetailDto(
     @JsonProperty("classroom")
     String classroom,
     
+    @JsonProperty("day")
+    String day,
+    
     @JsonProperty("start")
     String start,
     

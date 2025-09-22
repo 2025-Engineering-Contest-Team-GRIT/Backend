@@ -1,5 +1,6 @@
 package grit.guidance.domain.course.repository;
 
+import grit.guidance.domain.course.entity.CourseType;
 import grit.guidance.domain.course.entity.TrackRequirement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TrackRequirementRepository extends JpaRepository<TrackRequirement, Long> {
@@ -24,4 +26,8 @@ public interface TrackRequirementRepository extends JpaRepository<TrackRequireme
     @Modifying
     @Query("UPDATE TrackRequirement tr SET tr.deletedAt = CURRENT_TIMESTAMP WHERE tr.deletedAt IS NULL")
     void deleteAllSoft();
+    
+    // course_id와 track_id로 course_type 조회
+    @Query("SELECT tr.courseType FROM TrackRequirement tr WHERE tr.course.id = :courseId AND tr.track.id = :trackId AND tr.deletedAt IS NULL")
+    Optional<CourseType> findCourseTypeByCourseIdAndTrackId(@Param("courseId") Long courseId, @Param("trackId") Long trackId);
 }
