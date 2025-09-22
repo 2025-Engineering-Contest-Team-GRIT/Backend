@@ -94,14 +94,20 @@ jobs:
           whoami
           pwd
         
+    - name: Create tar archive
+      run: |
+        tar -czf traefik-files.tar.gz traefik/
+        ls -la traefik-files.tar.gz
+        ls -la traefik/
+        
     - name: Copy files to server
-      uses: appleboy/scp-action@v0.1.4
+      uses: appleboy/scp-action@v1.0.0
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         source: |
-          traefik/**
+          traefik-files.tar.gz
           docker-compose.prod.yml
         target: "/home/ymkim2353"
         overwrite: true
@@ -117,7 +123,10 @@ jobs:
           # 필요한 디렉토리 생성
           sudo mkdir -p traefik/letsencrypt
           sudo chmod 600 traefik/letsencrypt/acme.json
-
+          
+          # tar 파일 압축 해제
+          tar -xzf traefik-files.tar.gz
+          
           # 환경변수 설정
           echo POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           echo POSTGRES_USER=${{ secrets.POSTGRES_USER }}
