@@ -2,7 +2,7 @@ spring:
   application:
     name: session
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   
   ai:
     openai:
