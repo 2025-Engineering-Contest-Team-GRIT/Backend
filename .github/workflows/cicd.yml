@@ -107,7 +107,6 @@ jobs:
           ./docker-compose.prod.yml
         target: "/home/ymkim2353"
 
-
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.3
       with:
