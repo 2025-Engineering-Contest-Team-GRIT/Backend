@@ -6,9 +6,12 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
@@ -35,6 +38,10 @@ public class SwaggerConfig {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .description("JWT 토큰을 입력하세요. 형식: Bearer {token}")))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .servers(List.of(
+                        new Server().url("https://api.guidance.cloud").description("Production Server"),
+                        new Server().url("http://localhost:8080").description("Local Development Server")
+                ));
     }
 }
