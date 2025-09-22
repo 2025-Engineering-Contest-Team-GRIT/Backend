@@ -37,3 +37,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### ssl인증서 ###
+traefik/letsencrypt/acme.json
