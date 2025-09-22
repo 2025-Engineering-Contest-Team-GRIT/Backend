@@ -77,6 +77,12 @@ jobs:
         cache-to: type=gha,mode=max
         
     # Docker Hub 업로드 후 서버 배포
+    - name: List files before copy
+      run: |
+        ls -la
+        ls -la traefik/
+        ls -la traefik/*
+        
     - name: Copy files to server
       uses: appleboy/scp-action@v0.1.4
       with:
