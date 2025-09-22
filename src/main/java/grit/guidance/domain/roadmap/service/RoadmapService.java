@@ -77,7 +77,7 @@ public class RoadmapService {
         // 1. 이수 완료 과목 처리
         for (CompletedCourse completedCourse : completedCourses) {
             Course course = completedCourse.getCourse();
-            String semesterKey = completedCourse.getCompletedYear() + "_" + completedCourse.getCompletedSemester().ordinal();
+            String semesterKey = completedCourse.getGradeLevel() + "_" + completedCourse.getCompletedSemester().ordinal();
             
             // 이수 완료 과목의 courseType 조회
             String courseType = getCourseTypeForCompletedCourse(course.getId(), completedCourse.getTrack());
@@ -138,7 +138,7 @@ public class RoadmapService {
         List<SemesterDto> semesters = new ArrayList<>();
         for (Map.Entry<String, List<CourseDto>> entry : semesterMap.entrySet()) {
             String[] parts = entry.getKey().split("_");
-            int year = Integer.parseInt(parts[0]);
+            int year = Integer.parseInt(parts[0]); // 이제 gradeLevel이 들어감
             int semester = Integer.parseInt(parts[1]) + 1; // 0-based to 1-based
             
             int totalCredits = entry.getValue().stream()
