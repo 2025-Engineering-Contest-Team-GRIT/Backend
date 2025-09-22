@@ -132,12 +132,12 @@ jobs:
           sudo chmod 600 traefik/letsencrypt/acme.json
 
           # 환경변수 설정
-          echo POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          echo POSTGRES_URL=${{ secrets.POSTGRES_URL }}
-          echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          echo SPRING_PROFILES_ACTIVE=dev
+          export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          export POSTGRES_URL=${{ secrets.POSTGRES_URL }}
+          export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          export SPRING_PROFILES_ACTIVE=dev
 
           # Docker Compose 실행
           docker compose -f docker-compose.prod.yml down
