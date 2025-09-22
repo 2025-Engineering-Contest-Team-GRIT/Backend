@@ -3,13 +3,23 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - src/**
+      - traefik/**
+      - docker-compose.prod.yml
+      - .github/workflows/**
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   # CI: 모든 브랜치에서 빌드 및 테스트
   ci:
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: .
     
     steps:
     - name: Checkout code
@@ -42,6 +52,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: ci
+    
+    defaults:
+      run:
+        working-directory: .
     
     steps:
     - name: Checkout code
@@ -94,20 +108,14 @@ jobs:
           whoami
           pwd
         
-    - name: Create tar archive
-      run: |
-        tar -czf traefik-files.tar.gz traefik/
-        ls -la traefik-files.tar.gz
-        ls -la traefik/
-        
     - name: Copy files to server
-      uses: appleboy/scp-action@v1.0.0
+      uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         source: |
-          traefik-files.tar.gz
+          traefik/**
           docker-compose.prod.yml
         target: "/home/ymkim2353"
         overwrite: true
@@ -123,10 +131,7 @@ jobs:
           # 필요한 디렉토리 생성
           sudo mkdir -p traefik/letsencrypt
           sudo chmod 600 traefik/letsencrypt/acme.json
-          
-          # tar 파일 압축 해제
-          tar -xzf traefik-files.tar.gz
-          
+
           # 환경변수 설정
           echo POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           echo POSTGRES_USER=${{ secrets.POSTGRES_USER }}
