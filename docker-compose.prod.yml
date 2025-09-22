@@ -1,15 +1,83 @@
 # 배포용 Docker Compose 설정
-# 사용법: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+# 사용법: docker compose -f docker-compose.prod.yml up -d
 
 services:
   traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8088:8088"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
+      - ./traefik/letsencrypt:/etc/traefik
+    networks:
+      - web
+    environment:
+      - TRAEFIK_DASHBOARD_AUTH=admin:$$apr1$$HtfOXLKL$$QMj0r2dHvy0FnkLG.STWR1
     labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.guidance.cloud`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
 
+  db:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: database
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Asia/Seoul
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sa -d database" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - postgres
+      - "-c"
+      - "logging_collector=off"
+      - "-c"
+      - "log_statement=none"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - backend
+    restart: unless-stopped
+
   backend:
+    image: hwnahee/guidance:main  # Docker Hub 이미지 사용
+    container_name: backend
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+      - web
+    restart: unless-stopped
+    env_file:
+      - .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.guidance.cloud`)"
@@ -17,3 +85,13 @@ services:
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.backend.middlewares=rate-limit@file"
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
+
+volumes:
+  postgres_data:
+  qdrant_data:
+
+networks:
+  backend:
+    name: backend
+  web:
+    external: true

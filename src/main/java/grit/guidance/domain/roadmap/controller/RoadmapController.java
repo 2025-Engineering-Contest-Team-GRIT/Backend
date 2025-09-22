@@ -222,7 +222,6 @@ public class RoadmapController {
         }
     }
 
-    // 새로 추가된 GET /roadmaps 엔드포인트
     @GetMapping("/roadmaps")
     @Operation(summary = "로드맵 조회", description = "사용자의 전체 로드맵 정보를 조회합니다.")
     @SecurityRequirement(name = "bearerAuth")

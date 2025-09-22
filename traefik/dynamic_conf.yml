@@ -1,12 +1,13 @@
 http:
   routers:
     spring-app-router: # 라우터 이름 명확화 (선택 사항)
-      # Host 규칙은 정확히 api.rexume.site 만을 대상으로 함
       # PathPrefix 규칙도 유지
-      rule: "Host(`localhost`) && PathPrefix(`/api`)"
+      rule: "Host(`localhost`) && Host(`api.guidance.site`) && PathPrefix(`/api`)"
       entryPoints:
         - web # HTTP (80) 엔트리포인트 사용
       service: spring-app-service # 서비스 이름 명확화 (선택 사항)
+      tls:
+        certResolver: letsencrypt # Let's Encrypt 사용 명시
       middlewares:
         - rate-limit # 적용할 미들웨어
 
