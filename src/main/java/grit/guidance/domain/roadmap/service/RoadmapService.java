@@ -4,6 +4,7 @@ import grit.guidance.domain.course.entity.Course;
 import grit.guidance.domain.course.entity.CourseType;
 import grit.guidance.domain.course.entity.Track;
 import grit.guidance.domain.course.repository.TrackRequirementRepository;
+import grit.guidance.domain.course.repository.CoursePrerequisiteRepository;
 import grit.guidance.domain.roadmap.dto.*;
 import grit.guidance.domain.roadmap.entity.RecommendedCourse;
 import grit.guidance.domain.user.entity.CompletedCourse;
@@ -32,6 +33,7 @@ public class RoadmapService {
     private final RecommendedCourseRepository recommendedCourseRepository;
     private final TrackRequirementRepository trackRequirementRepository;
     private final UserTrackRepository userTrackRepository;
+    private final CoursePrerequisiteRepository coursePrerequisiteRepository;
 
     public RoadmapResponseDto getRoadmapData(String studentId) {
         try {
@@ -82,11 +84,15 @@ public class RoadmapService {
             // 이수 완료 과목의 courseType 조회
             String courseType = getCourseTypeForCompletedCourse(course.getId(), completedCourse.getTrack());
             
+            // 선수과목 ID 조회
+            List<Long> prerequisiteIds = coursePrerequisiteRepository.findPrerequisiteIdsByCourseId(course.getId());
+            
             CourseDto courseDto = CourseDto.createCompleted(
                     course.getId(),
                     course.getCourseName(),
                     course.getCredits(),
                     courseType,
+                    prerequisiteIds,
                     course.getDescription(),
                     completedCourse.getCompletedGrade().name()
             );
@@ -103,11 +109,15 @@ public class RoadmapService {
             // 수강 중인 과목의 courseType 조회
             String courseType = getCourseTypeForEnrolledOrRecommendedCourse(course.getId(), userTracks);
             
+            // 선수과목 ID 조회
+            List<Long> prerequisiteIds = coursePrerequisiteRepository.findPrerequisiteIdsByCourseId(course.getId());
+            
             CourseDto courseDto = CourseDto.createTaking(
                     course.getId(),
                     course.getCourseName(),
                     course.getCredits(),
                     courseType,
+                    prerequisiteIds,
                     course.getDescription()
             );
 
@@ -122,11 +132,15 @@ public class RoadmapService {
             // 추천 과목의 courseType 조회
             String courseType = getCourseTypeForEnrolledOrRecommendedCourse(course.getId(), userTracks);
             
+            // 선수과목 ID 조회
+            List<Long> prerequisiteIds = coursePrerequisiteRepository.findPrerequisiteIdsByCourseId(course.getId());
+            
             CourseDto courseDto = CourseDto.createRecommended(
                     course.getId(),
                     course.getCourseName(),
                     course.getCredits(),
                     courseType,
+                    prerequisiteIds,
                     course.getDescription(),
                     recommendedCourse.getRecommendDescription()
             );

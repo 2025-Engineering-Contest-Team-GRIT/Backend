@@ -4,6 +4,10 @@ import grit.guidance.domain.user.dto.ErrorResponse;
 import grit.guidance.domain.user.dto.LoginRequest;
 import grit.guidance.domain.user.service.UsersCrawlingService;
 import grit.guidance.domain.user.service.LoginService;
+import grit.guidance.domain.user.repository.UserTrackRepository;
+import grit.guidance.domain.user.repository.UsersRepository;
+import grit.guidance.domain.user.entity.UserTrack;
+import grit.guidance.domain.user.entity.TrackType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,6 +26,8 @@ public class CrawlingController {
 
     private final UsersCrawlingService crawlingService;
     private final LoginService loginService;
+    private final UserTrackRepository userTrackRepository;
+    private final UsersRepository usersRepository;
 
     @PostMapping("/crawling")
     @Operation(summary = "신규 사용자 데이터 크롤링", description = "신규 사용자의 약관 동의 후 한성대 포털에서 학사 데이터를 크롤링하여 저장")
@@ -40,9 +46,32 @@ public class CrawlingController {
             // 크롤링된 데이터 저장/업데이트
             loginService.saveOrUpdateAllUserData(request.studentId(), hansungData);
             
-            log.info("크롤링 및 데이터 저장 완료: studentId={}", request.studentId());
+            // 사용자의 트랙 정보 조회
+            String track1 = null;
+            String track2 = null;
+            try {
+                // 사용자 조회 (학번으로)
+                var user = usersRepository.findByStudentId(request.studentId()).orElse(null);
+                if (user != null) {
+                    // 사용자의 트랙 정보 조회
+                    var userTracks = userTrackRepository.findByUsers(user);
+                    
+                    for (UserTrack userTrack : userTracks) {
+                        if (userTrack.getTrackType() == TrackType.PRIMARY) {
+                            track1 = userTrack.getTrack().getTrackName();
+                        } else if (userTrack.getTrackType() == TrackType.SECONDARY) {
+                            track2 = userTrack.getTrack().getTrackName();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("트랙 정보 조회 실패: {}", e.getMessage());
+            }
             
-            return ResponseEntity.ok().body(new CrawlingResponse(200, "크롤링이 완료되었습니다."));
+            log.info("크롤링 및 데이터 저장 완료: studentId={}, track1={}, track2={}", 
+                    request.studentId(), track1, track2);
+            
+            return ResponseEntity.ok().body(new CrawlingResponse(200, "크롤링이 완료되었습니다.", track1, track2));
             
         } catch (IllegalArgumentException e) {
             log.warn("크롤링 실패 - 잘못된 인증: {}", e.getMessage());
@@ -58,6 +87,8 @@ public class CrawlingController {
     // 크롤링 응답 DTO
     public record CrawlingResponse(
         Integer status,
-        String message
+        String message,
+        String track1,
+        String track2
     ) {}
 }
