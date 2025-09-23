@@ -32,4 +32,8 @@ public interface CompletedCourseRepository extends JpaRepository<CompletedCourse
     // 사용자 ID로 이수한 과목 ID 목록 조회
     @Query("SELECT cc.course.id FROM CompletedCourse cc WHERE cc.users.id = :userId")
     List<Long> findCourseIdsByUserId(@Param("userId") Long userId);
+    
+    // 학번으로 완료된 과목 조회 (Course 정보 포함)
+    @Query("SELECT cc FROM CompletedCourse cc JOIN FETCH cc.course WHERE cc.users.studentId = :studentId")
+    List<CompletedCourse> findByUsersStudentId(@Param("studentId") String studentId);
 }

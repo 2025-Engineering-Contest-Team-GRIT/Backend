@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import grit.guidance.domain.course.dto.CourseDataDto;
 import grit.guidance.domain.course.entity.*;
 import grit.guidance.domain.course.repository.CourseRepository;
+import grit.guidance.domain.course.repository.CoursePrerequisiteRepository;
 import grit.guidance.domain.course.repository.TrackRepository;
 import grit.guidance.domain.course.repository.TrackRequirementRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final CoursePrerequisiteRepository coursePrerequisiteRepository;
     private final TrackRepository trackRepository;
     private final TrackRequirementRepository trackRequirementRepository;
     private final ObjectMapper objectMapper;
@@ -45,9 +46,10 @@ public class CourseService {
         try {
             // 주의: Track은 수동으로 넣었으므로 삭제하지 않음
             // 소프트 딜리트를 위해 @Modifying @Query 사용
+            coursePrerequisiteRepository.deleteAllSoft();
             trackRequirementRepository.deleteAllSoft();
             courseRepository.deleteAllSoft();
-            log.info("기존 과목 및 이수 요건 데이터를 모두 소프트 삭제했습니다.");
+            log.info("기존 과목, 선수과목 관계 및 이수 요건 데이터를 모두 소프트 삭제했습니다.");
 
             // 1. JSON 파일 파싱
             ClassPathResource resource = new ClassPathResource("data/courses.json");
@@ -66,6 +68,10 @@ public class CourseService {
             // 4. 이수 요건 정보 저장
             createAndSaveRequirements(dtoList, courseMap, trackMap);
             log.info("트랙별 이수 요건 정보를 성공적으로 저장했습니다.");
+
+            // 5. 선수과목 관계 저장
+            createAndSavePrerequisites(dtoList, courseMap);
+            log.info("선수과목 관계 정보를 성공적으로 저장했습니다.");
 
             log.info("데이터베이스 초기화를 성공적으로 완료했습니다.");
 
@@ -125,6 +131,10 @@ public class CourseService {
 
         // 중복 제거된 Course 리스트를 DB에 한번에 저장
         courseRepository.saveAll(courses);
+        
+        // 강제로 플러시하여 ID 생성 보장
+        courseRepository.flush();
+        log.info("Course 엔티티 저장 및 플러시 완료");
 
         // 나중에 쉽게 찾아 쓸 수 있도록 Map 형태로 반환
         return courses.stream()
@@ -168,4 +178,85 @@ public class CourseService {
             default -> CourseType.GENERAL_ELECTIVE;
         };
     }
+
+    /**
+     * JSON 데이터에서 선수과목 관계를 추출하여 CoursePrerequisite 엔티티를 생성하고 DB에 저장
+     */
+    private void createAndSavePrerequisites(List<CourseDataDto> dtoList, Map<String, Course> courseMap) {
+        log.info("선수과목 관계 저장 시작 - 총 {}개의 과목 데이터 처리", dtoList.size());
+        
+        List<CoursePrerequisite> prerequisites = new ArrayList<>();
+        int totalPrerequisites = 0;
+        int processedCourses = 0;
+        int skippedCourses = 0;
+        int missingPrerequisites = 0;
+        int loopCount = 0;
+        
+        for (CourseDataDto dto : dtoList) {
+            loopCount++;
+            log.debug("루프 {}번째 - 과목 ID: {}", loopCount, dto.getId());
+            log.debug("prerequisiteIds 값: {}", dto.getPrerequisiteIds());
+            // 선수과목 ID 목록이 있는 경우에만 처리
+            if (dto.getPrerequisiteIds() != null && !dto.getPrerequisiteIds().isEmpty()) {
+                log.info("과목 '{}'의 선수과목: {}", dto.getId(), dto.getPrerequisiteIds());
+                totalPrerequisites += dto.getPrerequisiteIds().size();
+                processedCourses++;
+                
+                Course course = courseMap.get(dto.getId());
+                if (course != null) {
+                    log.debug("과목 '{}' (ID: {}) 처리 중", dto.getId(), course.getId());
+                    if (course.getId() == null) {
+                        log.error("Course 엔티티의 ID가 null입니다! 과목: {}", dto.getId());
+                        continue;
+                    }
+                    
+                    for (String prerequisiteId : dto.getPrerequisiteIds()) {
+                        // 선수과목 ID로 Course 엔티티 찾기
+                        Course prerequisite = courseMap.get(prerequisiteId);
+                        if (prerequisite != null) {
+                            log.debug("선수과목 '{}' (ID: {}) 찾음", prerequisiteId, prerequisite.getId());
+                            
+                            // 중복 관계 확인
+                            if (!coursePrerequisiteRepository.existsByCourseIdAndPrerequisiteId(
+                                    course.getId(), prerequisite.getId())) {
+                                CoursePrerequisite coursePrerequisite = CoursePrerequisite.builder()
+                                        .course(course)
+                                        .prerequisiteId(prerequisite.getId())
+                                        .build();
+                                prerequisites.add(coursePrerequisite);
+                                log.debug("선수과목 관계 추가: {} -> {}", course.getId(), prerequisite.getId());
+                            } else {
+                                log.debug("이미 존재하는 선수과목 관계: {} -> {}", course.getId(), prerequisite.getId());
+                            }
+                        } else {
+                            log.warn("선수과목 ID '{}'에 해당하는 과목을 찾을 수 없습니다.", prerequisiteId);
+                            missingPrerequisites++;
+                        }
+                    }
+                } else {
+                    log.warn("과목 ID '{}'에 해당하는 Course 엔티티를 찾을 수 없습니다.", dto.getId());
+                    skippedCourses++;
+                }
+            } else {
+                log.debug("과목 '{}'에는 선수과목이 없습니다.", dto.getId());
+            }
+        }
+        
+        log.info("선수과목 관계 처리 완료:");
+        log.info("- 총 루프 실행 횟수: {}", loopCount);
+        log.info("- 선수과목이 있는 과목 수: {}", processedCourses);
+        log.info("- 총 선수과목 ID 수: {}", totalPrerequisites);
+        log.info("- 생성된 관계 수: {}", prerequisites.size());
+        log.info("- 찾을 수 없는 선수과목 수: {}", missingPrerequisites);
+        log.info("- 처리 실패한 과목 수: {}", skippedCourses);
+        
+        // 모든 선수과목 관계를 DB에 한번에 저장
+        if (!prerequisites.isEmpty()) {
+            coursePrerequisiteRepository.saveAll(prerequisites);
+            log.info("{}개의 선수과목 관계를 데이터베이스에 저장했습니다.", prerequisites.size());
+        } else {
+            log.warn("저장할 선수과목 관계가 없습니다.");
+        }
+    }
+
 }

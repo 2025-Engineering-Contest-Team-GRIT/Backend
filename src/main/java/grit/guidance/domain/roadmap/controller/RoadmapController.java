@@ -14,8 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +30,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @Tag(name = "Roadmap", description = "로드맵 추천 API")
 public class RoadmapController {
 
-    private static final Logger log = LoggerFactory.getLogger(RoadmapController.class);
     
     private final CourseEmbeddingService courseEmbeddingService;
     private final RecommendedCourseService recommendedCourseService;
