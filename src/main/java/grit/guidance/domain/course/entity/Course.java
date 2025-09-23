@@ -1,5 +1,7 @@
 package grit.guidance.domain.course.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import grit.guidance.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -16,6 +18,7 @@ import java.util.List;
 @Table(name = "course")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "hibernate_proxy"})
 // 삭제 요청이 발생했을 때, 실제 DELETE 쿼리 대신 지정된 UPDATE 쿼리를 실행하도록 JPA에게 지시
 @SQLDelete(sql = "UPDATE course SET updated_at = NOW(), deleted_at = NOW() WHERE course_id = ?")
 // 모든 SELECT 쿼리에 삭제되지 않은 데이터만 찾아줌.
@@ -49,10 +52,12 @@ public class Course extends BaseEntity {
 
     // 1:N 관계 - course와 completed_course (양방향)
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<grit.guidance.domain.user.entity.CompletedCourse> completedCourses = new ArrayList<>();
 
     // 1:N 관계 - course와 favorite_course (양방향)
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<grit.guidance.domain.user.entity.FavoriteCourse> favoriteCourses = new ArrayList<>();
 
     @Builder

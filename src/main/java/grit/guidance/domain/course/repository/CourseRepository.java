@@ -16,4 +16,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     @Modifying
     @Query("UPDATE Course c SET c.deletedAt = CURRENT_TIMESTAMP WHERE c.deletedAt IS NULL")
     void deleteAllSoft();
+    
 }
