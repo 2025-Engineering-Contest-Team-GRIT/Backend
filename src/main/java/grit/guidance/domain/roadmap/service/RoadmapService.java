@@ -59,7 +59,12 @@ public class RoadmapService {
             // 6. 학기별로 그룹화하여 로드맵 데이터 생성
             List<SemesterDto> semesters = buildSemesterData(completedCourses, enrolledCourses, recommendedCourses, userTracks);
 
-            RoadmapDataDto data = new RoadmapDataDto(semesters);
+            // 7. 로드맵 데이터 생성 (학년, 학기 정보 포함)
+            RoadmapDataDto data = new RoadmapDataDto(
+                    semesters, 
+                    user.getGrade(), 
+                    user.getSemester().toString()
+            );
             return RoadmapResponseDto.success(data);
 
         } catch (Exception e) {
