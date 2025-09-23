@@ -17,4 +17,5 @@ public class UserCourseDto {
     private Long trackId; // completed_course에 있을 때만 반환, 전공필수일 때만 반환
     private Integer grade; // 학년
     private String semester; // 학기
+    private Boolean isFavorite; // 관심과목 여부
 }
