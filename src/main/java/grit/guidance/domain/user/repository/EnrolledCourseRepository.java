@@ -19,4 +19,8 @@ public interface EnrolledCourseRepository extends JpaRepository<EnrolledCourse, 
     // 사용자 ID로 수강중인 과목 ID 목록 조회
     @Query("SELECT ec.course.id FROM EnrolledCourse ec WHERE ec.user.id = :userId")
     List<Long> findCourseIdsByUserId(@Param("userId") Long userId);
+    
+    // 학번으로 수강중인 과목 조회 (Course 정보 포함)
+    @Query("SELECT ec FROM EnrolledCourse ec JOIN FETCH ec.course WHERE ec.user.studentId = :studentId")
+    List<EnrolledCourse> findByUsersStudentId(@Param("studentId") String studentId);
 }
