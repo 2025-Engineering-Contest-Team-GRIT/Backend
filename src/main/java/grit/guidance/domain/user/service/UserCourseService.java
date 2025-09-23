@@ -10,6 +10,7 @@ import grit.guidance.domain.user.entity.EnrolledCourse;
 import grit.guidance.domain.user.entity.Users;
 import grit.guidance.domain.user.repository.CompletedCourseRepository;
 import grit.guidance.domain.user.repository.EnrolledCourseRepository;
+import grit.guidance.domain.user.repository.FavoriteCourseRepository;
 import grit.guidance.domain.user.repository.UsersRepository;
 import grit.guidance.global.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class UserCourseService {
     private final UsersRepository usersRepository;
     private final CompletedCourseRepository completedCourseRepository;
     private final EnrolledCourseRepository enrolledCourseRepository;
+    private final FavoriteCourseRepository favoriteCourseRepository;
     private final JwtService jwtService;
 
     /**
@@ -64,11 +66,15 @@ public class UserCourseService {
         Map<Long, EnrolledCourse> enrolledCourseMap = enrolledCourses.stream()
                 .collect(Collectors.toMap(ec -> ec.getCourse().getId(), ec -> ec));
 
-        // 5. 과목별 트랙 요구사항 매핑
+        // 5. 사용자의 관심과목들 조회
+        List<Long> favoriteCourseIds = favoriteCourseRepository.findCourseIdsByUserId(user.getId());
+        log.info("관심과목 수: {}", favoriteCourseIds.size());
+
+        // 6. 과목별 트랙 요구사항 매핑
         Map<Long, List<TrackRequirement>> courseTrackRequirementsMap = trackRequirements.stream()
                 .collect(Collectors.groupingBy(tr -> tr.getCourse().getId()));
 
-        // 6. 과목별 상태 정보 생성
+        // 7. 과목별 상태 정보 생성
         List<UserCourseDto> userCourses = new ArrayList<>();
         
         for (Course course : trackCourses) {
@@ -78,10 +84,14 @@ public class UserCourseService {
             String courseType = determineCourseType(courseRequirements);
             Long trackId = determineTrackId(courseRequirements, course.getId(), completedCourseMap);
             
+            // 관심과목 여부 확인
+            boolean isFavorite = favoriteCourseIds.contains(course.getId());
+            
             UserCourseDto.UserCourseDtoBuilder builder = UserCourseDto.builder()
                     .course(course)
                     .courseType(courseType)
-                    .trackId(trackId);
+                    .trackId(trackId)
+                    .isFavorite(isFavorite);
 
             if (completedCourseMap.containsKey(course.getId())) {
                 // 완료된 과목 - completed_course 테이블에서 정보 가져오기
@@ -107,11 +117,12 @@ public class UserCourseService {
             userCourses.add(builder.build());
         }
 
-        log.info("사용자 과목 조회 완료 - 총 {}개 과목 (완료: {}, 수강중: {}, 수강가능: {})", 
+        log.info("사용자 과목 조회 완료 - 총 {}개 과목 (완료: {}, 수강중: {}, 수강가능: {}, 관심과목: {})", 
                 userCourses.size(),
                 userCourses.stream().filter(uc -> "completed".equals(uc.getStatus())).count(),
                 userCourses.stream().filter(uc -> "enrolled".equals(uc.getStatus())).count(),
-                userCourses.stream().filter(uc -> "available".equals(uc.getStatus())).count());
+                userCourses.stream().filter(uc -> "available".equals(uc.getStatus())).count(),
+                userCourses.stream().filter(uc -> Boolean.TRUE.equals(uc.getIsFavorite())).count());
 
         return userCourses;
     }
