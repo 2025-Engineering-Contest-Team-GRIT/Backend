@@ -13,8 +13,8 @@ import java.util.List;
 @Repository
 public interface CoursePrerequisiteRepository extends JpaRepository<CoursePrerequisite, Long> {
     
-    // 특정 과목의 선수과목 ID 목록 조회
-    @Query("SELECT cp.prerequisiteId FROM CoursePrerequisite cp WHERE cp.course.id = :courseId AND cp.deletedAt IS NULL")
+    // 특정 과목의 선수과목 ID 목록 조회 (중복 제거)
+    @Query("SELECT DISTINCT cp.prerequisiteId FROM CoursePrerequisite cp WHERE cp.course.id = :courseId AND cp.deletedAt IS NULL")
     List<Long> findPrerequisiteIdsByCourseId(@Param("courseId") Long courseId);
     
     // 특정 과목이 선수과목으로 사용되는 과목 목록 조회

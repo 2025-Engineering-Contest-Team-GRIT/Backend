@@ -34,20 +34,20 @@ public record CourseDto(
     String recommendedDescription
 ) {
     public static CourseDto createCompleted(Long courseId, String courseName, Integer credits, 
-                                          String courseType, String courseDescription, String completedGrade) {
-        return new CourseDto(courseId, courseName, credits, "COMPLETED", courseType, null, 
+                                          String courseType, List<Long> prerequisiteIds, String courseDescription, String completedGrade) {
+        return new CourseDto(courseId, courseName, credits, "COMPLETED", courseType, prerequisiteIds, 
                            courseDescription, completedGrade, null);
     }
 
     public static CourseDto createTaking(Long courseId, String courseName, Integer credits, 
-                                       String courseType, String courseDescription) {
-        return new CourseDto(courseId, courseName, credits, "TAKING", courseType, null, 
+                                       String courseType, List<Long> prerequisiteIds, String courseDescription) {
+        return new CourseDto(courseId, courseName, credits, "TAKING", courseType, prerequisiteIds, 
                            courseDescription, null, null);
     }
 
     public static CourseDto createRecommended(Long courseId, String courseName, Integer credits, 
-                                            String courseType, String courseDescription, String recommendedDescription) {
-        return new CourseDto(courseId, courseName, credits, "RECOMMENDED", courseType, null, 
+                                            String courseType, List<Long> prerequisiteIds, String courseDescription, String recommendedDescription) {
+        return new CourseDto(courseId, courseName, credits, "RECOMMENDED", courseType, prerequisiteIds, 
                            courseDescription, null, recommendedDescription);
     }
 }
