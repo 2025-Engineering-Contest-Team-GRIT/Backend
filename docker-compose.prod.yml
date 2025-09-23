@@ -1,5 +1,6 @@
 # 배포용 Docker Compose 설정
 # 사용법: docker compose -f docker-compose.prod.yml up -d
+
 services:
   traefik:
     image: traefik:v3.0
