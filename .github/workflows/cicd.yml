@@ -3,13 +3,23 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - src/**
+      - traefik/**
+      - docker-compose.prod.yml
+      - .github/workflows/**
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   # CI: 모든 브랜치에서 빌드 및 테스트
   ci:
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: .
     
     steps:
     - name: Checkout code
@@ -42,6 +52,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: ci
+    
+    defaults:
+      run:
+        working-directory: .
     
     steps:
     - name: Checkout code
@@ -95,16 +109,15 @@ jobs:
           pwd
         
     - name: Copy files to server
-      uses: appleboy/scp-action@v1.0.0
+      id: copy
+      uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
-        source: |
-          traefik/**
-          docker-compose.prod.yml
-        target: "/home/ymkim2353"
-        overwrite: true
+        source: "./traefik/**,./docker-compose.prod.yml"
+        target: /home/ymkim2353/
+        debug: true
         
 
     - name: Deploy to server
@@ -119,12 +132,12 @@ jobs:
           sudo chmod 600 traefik/letsencrypt/acme.json
 
           # 환경변수 설정
-          echo POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          echo POSTGRES_URL=${{ secrets.POSTGRES_URL }}
-          echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          echo SPRING_PROFILES_ACTIVE=dev
+          export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          export POSTGRES_URL=${{ secrets.POSTGRES_URL }}
+          export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          export SPRING_PROFILES_ACTIVE=dev
 
           # Docker Compose 실행
           docker compose -f docker-compose.prod.yml down
