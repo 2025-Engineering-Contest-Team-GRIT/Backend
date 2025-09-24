@@ -2,7 +2,7 @@ http:
   routers:
     spring-app-router: # 라우터 이름 명확화 (선택 사항)
       # PathPrefix 규칙도 유지
-      rule: "Host(`localhost`) && Host(`api.guidance.site`) && PathPrefix(`/api`)"
+      rule: "Host(`api.hangil.cloud`) && PathPrefix(`/api`)"
       entryPoints:
         - web # HTTP (80) 엔트리포인트 사용
       service: spring-app-service # 서비스 이름 명확화 (선택 사항)
@@ -10,6 +10,16 @@ http:
         certResolver: letsencrypt # Let's Encrypt 사용 명시
       middlewares:
         - rate-limit # 적용할 미들웨어
+
+    traefik-dashboard:
+      rule: "Host(`traefik.hangil.cloud`)"
+      entryPoints:
+        - web
+      service: api@internal
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - dashboard-auth
 
 
   services:
