@@ -18,8 +18,6 @@ http:
       service: api@internal
       tls:
         certResolver: letsencrypt
-      middlewares:
-        - dashboard-auth
 
 
   services:
