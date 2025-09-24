@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EntityScan(basePackages = "grit.guidance.domain")
+@EntityScan(basePackages = "grit.guidance")
 public class GuidanceApplication {
 
 	public static void main(String[] args) {
