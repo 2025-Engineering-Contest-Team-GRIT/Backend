@@ -40,7 +40,7 @@ public class SwaggerConfig {
                                 .description("JWT 토큰을 입력하세요. 형식: Bearer {token}")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .servers(List.of(
-                        new Server().url("https://api.guidance.cloud").description("Production Server"),
+                        new Server().url("https://api.hangil.cloud").description("Production Server"),
                         new Server().url("http://localhost:8080").description("Local Development Server")
                 ));
     }
