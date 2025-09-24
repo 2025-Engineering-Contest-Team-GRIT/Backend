@@ -18,6 +18,7 @@ import grit.guidance.domain.user.entity.CompletedCourse;
 import grit.guidance.domain.user.entity.UserTrack;
 import grit.guidance.domain.user.entity.Users;
 import grit.guidance.domain.user.repository.CompletedCourseRepository;
+import grit.guidance.domain.user.repository.EnrolledCourseRepository;
 import grit.guidance.domain.user.repository.UserTrackRepository;
 import grit.guidance.domain.user.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class SimulationService {
     private final UserTrackRepository userTrackRepository;
     private final TrackRequirementRepository trackRequirementRepository;
     private final CompletedCourseRepository completedCourseRepository;
+    private final EnrolledCourseRepository enrolledCourseRepository;
     private final CourseRepository courseRepository;
     private final GraduationPlanRepository graduationPlanRepository;
     private final GraduationPlanCourseRepository graduationPlanCourseRepository;
@@ -220,6 +222,14 @@ public class SimulationService {
         Set<String> completedCourseCodes = completedCourseRepository.findByUsers(user).stream()
                 .map(completedCourse -> completedCourse.getCourse().getCourseCode())
                 .collect(Collectors.toSet());
+
+        // 수강 중인 과목도 포함
+        Set<String> enrolledCourseCodes = enrolledCourseRepository.findByUser(user).stream()
+                .map(enrolledCourse -> enrolledCourse.getCourse().getCourseCode())
+                .collect(Collectors.toSet());
+
+        // 완료 + 수강 중 과목 합치기
+        completedCourseCodes.addAll(enrolledCourseCodes);
 
         List<TrackRequirement> trackRequirements = new ArrayList<>();
         for (UserTrack userTrack : userTracks) {
