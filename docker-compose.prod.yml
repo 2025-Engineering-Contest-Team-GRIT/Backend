@@ -13,14 +13,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
-      - ./traefik/letsencrypt:/etc/traefik
+      - letsencrypt_data:/etc/traefik/letsencrypt
     networks:
       - web
     environment:
       - TRAEFIK_DASHBOARD_AUTH=admin:$$apr1$$HtfOXLKL$$QMj0r2dHvy0FnkLG.STWR1
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.guidance.cloud`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.hangil.cloud`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
@@ -84,7 +84,7 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.guidance.cloud`)"
+      - "traefik.http.routers.backend.rule=Host(`api.hangil.cloud`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.backend.middlewares=rate-limit@file"
@@ -93,6 +93,7 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
+  letsencrypt_data:
 
 networks:
   backend:
