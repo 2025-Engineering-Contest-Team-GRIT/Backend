@@ -93,6 +93,7 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
+  letsencrypt_data:
 
 networks:
   backend:
