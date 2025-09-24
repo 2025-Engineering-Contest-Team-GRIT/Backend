@@ -57,7 +57,7 @@ public class RoadmapService {
             List<UserTrack> userTracks = userTrackRepository.findByUsers(user);
             
             // 6. 학기별로 그룹화하여 로드맵 데이터 생성
-            List<SemesterDto> semesters = buildSemesterData(completedCourses, enrolledCourses, recommendedCourses, userTracks);
+            List<SemesterDto> semesters = buildSemesterData(completedCourses, enrolledCourses, recommendedCourses, userTracks, user);
 
             // 7. 로드맵 데이터 생성 (학년, 학기 정보 포함)
             RoadmapDataDto data = new RoadmapDataDto(
@@ -76,7 +76,8 @@ public class RoadmapService {
     private List<SemesterDto> buildSemesterData(List<CompletedCourse> completedCourses, 
                                                List<EnrolledCourse> enrolledCourses, 
                                                List<RecommendedCourse> recommendedCourses,
-                                               List<UserTrack> userTracks) {
+                                               List<UserTrack> userTracks,
+                                               Users user) {
         
         // 모든 과목을 학기별로 그룹화
         Map<String, List<CourseDto>> semesterMap = new HashMap<>();
@@ -105,11 +106,14 @@ public class RoadmapService {
             semesterMap.computeIfAbsent(semesterKey, k -> new ArrayList<>()).add(courseDto);
         }
 
-        // 2. 수강 중인 과목 처리
+        // 2. 수강 중인 과목 처리 (별도 학기로 분리)
         for (EnrolledCourse enrolledCourse : enrolledCourses) {
             Course course = enrolledCourse.getCourse();
-            // 현재 학기로 가정 (실제로는 사용자의 현재 학기 정보 필요)
-            String semesterKey = getCurrentSemesterKey();
+            // TAKING 과목들을 현재 학기로 설정
+            int takingYear = user.getGrade();
+            int takingSemester = user.getSemester().ordinal(); // 현재 학기 (0-based)
+            
+            String semesterKey = takingYear + "_" + takingSemester;
             
             // 수강 중인 과목의 courseType 조회
             String courseType = getCourseTypeForEnrolledOrRecommendedCourse(course.getId(), userTracks);
@@ -176,10 +180,6 @@ public class RoadmapService {
         return semesters;
     }
 
-    private String getCurrentSemesterKey() {
-        // 현재 학기 계산 로직 (임시로 3학년 1학기로 설정)
-        return "3_0"; // 3학년 1학기
-    }
 
     /**
      * 이수 완료 과목의 courseType 조회
