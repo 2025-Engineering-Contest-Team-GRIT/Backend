@@ -18,8 +18,6 @@ http:
       service: api@internal
       tls:
         certResolver: letsencrypt
-      middlewares:
-        - dashboard-auth
 
 
   services:
@@ -30,12 +28,6 @@ http:
           - url: "http://backend:8080"
 
   middlewares:
-    # 대시보드 인증 미들웨어 정의 (실제 사용은 Traefik API 라우터 설정에서 필요 시 적용)
-    dashboard-auth:
-      basicAuth:
-        users:
-          - "${TRAEFIK_DASHBOARD_AUTH}"
-
     # Rate Limit 미들웨어 정의
     rate-limit:
       rateLimit:

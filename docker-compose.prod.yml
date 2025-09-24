@@ -1,5 +1,6 @@
 # 배포용 Docker Compose 설정
 # 사용법: docker compose -f docker-compose.prod.yml up -d
+
 services:
   traefik:
     image: traefik:v3.0
@@ -16,8 +17,8 @@ services:
       - letsencrypt_data:/etc/traefik/letsencrypt
     networks:
       - web
-    environment:
-      - TRAEFIK_DASHBOARD_AUTH=admin:$$apr1$$HtfOXLKL$$QMj0r2dHvy0FnkLG.STWR1
+    # environment:
+      # - TRAEFIK_DASHBOARD_AUTH=admin:$apr1$HtfOXLKL$QMj0r2dHvy0FnkLG.STWR1
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.hangil.cloud`)"
