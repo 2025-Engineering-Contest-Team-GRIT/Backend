@@ -31,9 +31,13 @@ public class GraduationPlanCourse extends BaseEntity {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @Column(name = "track")
+    private Long track;
+
     @Builder
-    private GraduationPlanCourse(GraduationPlan graduationPlan, Course course) {
+    private GraduationPlanCourse(GraduationPlan graduationPlan, Course course, Long track) {
         this.graduationPlan = graduationPlan;
         this.course = course;
+        this.track = track;
     }
 }

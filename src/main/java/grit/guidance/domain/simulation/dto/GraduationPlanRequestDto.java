@@ -8,5 +8,11 @@ import java.util.List;
 public class GraduationPlanRequestDto {
     private String studentId;
     private String planName;
-    private List<String> selectedCourseCodes; // 시뮬레이션에서 선택된 과목 코드 목록
+    private List<SelectedCourse> selectedCourses; // 시뮬레이션에서 선택된 과목과 트랙 정보 목록
+
+    @Getter
+    public static class SelectedCourse {
+        private String courseCode;
+        private Long trackId;
+    }
 }

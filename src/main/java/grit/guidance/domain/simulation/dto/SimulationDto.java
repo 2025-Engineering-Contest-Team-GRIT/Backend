@@ -74,5 +74,6 @@ public class SimulationDto {
         // 상세 조회 DTO에도 이 정보가 있는 것은 좋습니다!
         private Integer openGrade;
         private Semester openSemester;
+        private Long trackId;
     }
 }

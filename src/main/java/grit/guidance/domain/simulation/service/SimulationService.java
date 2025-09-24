@@ -81,7 +81,7 @@ public class SimulationService {
     /**
      * CREATE: 새로운 졸업 계획 생성
      */
-    @Transactional
+        @Transactional
     public Long createGraduationPlan(String studentId, GraduationPlanRequestDto requestDto) {
         Users user = usersRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. 학번: " + studentId));
@@ -92,19 +92,27 @@ public class SimulationService {
                 .build();
         GraduationPlan savedPlan = graduationPlanRepository.save(plan);
 
-        List<String> courseCodes = requestDto.getSelectedCourseCodes();
-        if (courseCodes != null && !courseCodes.isEmpty()) {
-            List<GraduationPlanCourse> planCourses = courseCodes.stream()
-                    .map(code -> {
-                        Course course = courseRepository.findByCourseCode(code)
-                                .orElseThrow(() -> new IllegalArgumentException("과목을 찾을 수 없습니다. 코드: " + code));
-                        return GraduationPlanCourse.builder()
-                                .graduationPlan(savedPlan)
-                                .course(course)
-                                .build();
-                    })
-                    .toList();
-            graduationPlanCourseRepository.saveAll(planCourses);
+        List<GraduationPlanRequestDto.SelectedCourse> selectedCourses = requestDto.getSelectedCourses();
+        if (selectedCourses != null && !selectedCourses.isEmpty()) {
+            List<String> courseCodes = selectedCourses.stream()
+                    .map(GraduationPlanRequestDto.SelectedCourse::getCourseCode)
+                    .collect(Collectors.toList());
+
+            List<Course> courses = courseRepository.findAllByCourseCodeIn(courseCodes);
+            Map<String, Course> courseMap = courses.stream()
+                    .collect(Collectors.toMap(Course::getCourseCode, c -> c));
+
+            for (GraduationPlanRequestDto.SelectedCourse selectedCourse : selectedCourses) {
+                Course course = courseMap.get(selectedCourse.getCourseCode());
+                if (course != null) {
+                    GraduationPlanCourse gpc = GraduationPlanCourse.builder()
+                            .graduationPlan(savedPlan)
+                            .course(course)
+                            .track(selectedCourse.getTrackId())
+                            .build();
+                    graduationPlanCourseRepository.save(gpc);
+                }
+            }
         }
         return savedPlan.getId();
     }
@@ -130,24 +138,26 @@ public class SimulationService {
      */
     public PlanDetailDto getGraduationPlanDetail(Long planId) {
         GraduationPlan plan = graduationPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("조회할 계획을 찾을 수 없습니다. ID: " + planId));
+                .orElseThrow(() -> new IllegalArgumentException("해당 졸업 계획을 찾을 수 없습니다. ID: " + planId));
 
-        List<CourseDetailDto> courseDetails = plan.getGraduationPlanCourses().stream()
-                .map(planCourse -> {
-                    Course course = planCourse.getCourse();
-                    return CourseDetailDto.builder()
-                            .courseCode(course.getCourseCode())
-                            .courseName(course.getCourseName())
-                            .credits(course.getCredits())
-                            .build();
-                })
+        List<GraduationPlanCourse> planCourses = graduationPlanCourseRepository.findByGraduationPlanId(planId);
+
+        List<CourseDetailDto> courseDetailDtos = planCourses.stream()
+                .map(gpc -> CourseDetailDto.builder()
+                        .courseCode(gpc.getCourse().getCourseCode())
+                        .courseName(gpc.getCourse().getCourseName())
+                        .credits(gpc.getCourse().getCredits())
+                        .openGrade(gpc.getCourse().getOpenGrade())
+                        .openSemester(gpc.getCourse().getOpenSemester())
+                        .trackId(gpc.getTrack())
+                        .build())
                 .collect(Collectors.toList());
 
         return PlanDetailDto.builder()
                 .planId(plan.getId())
                 .planName(plan.getPlanName())
                 .createdAt(plan.getCreatedAt())
-                .selectedCourses(courseDetails)
+                .selectedCourses(courseDetailDtos)
                 .build();
     }
 
@@ -157,22 +167,37 @@ public class SimulationService {
     @Transactional
     public void updateGraduationPlan(Long planId, GraduationPlanRequestDto requestDto) {
         GraduationPlan plan = graduationPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("수정할 계획을 찾을 수 없습니다. ID: " + planId));
+                .orElseThrow(() -> new IllegalArgumentException("해당 졸업 계획을 찾을 수 없습니다. ID: " + planId));
 
+        // 1. 계획 이름 업데이트
         plan.updatePlanName(requestDto.getPlanName());
-        plan.getGraduationPlanCourses().clear();
 
-        List<String> courseCodes = requestDto.getSelectedCourseCodes();
-        if (courseCodes != null && !courseCodes.isEmpty()) {
-            courseCodes.forEach(code -> {
-                Course course = courseRepository.findByCourseCode(code)
-                        .orElseThrow(() -> new IllegalArgumentException("과목을 찾을 수 없습니다. 코드: " + code));
-                GraduationPlanCourse newPlanCourse = GraduationPlanCourse.builder()
-                        .graduationPlan(plan)
-                        .course(course)
-                        .build();
-                plan.getGraduationPlanCourses().add(newPlanCourse);
-            });
+        // 2. 기존에 연결된 과목 정보 삭제
+        List<GraduationPlanCourse> existingCourses = graduationPlanCourseRepository.findByGraduationPlanId(planId);
+        graduationPlanCourseRepository.deleteAll(existingCourses);
+
+        // 3. 새로운 과목 정보 추가
+        List<GraduationPlanRequestDto.SelectedCourse> selectedCourses = requestDto.getSelectedCourses();
+        if (selectedCourses != null && !selectedCourses.isEmpty()) {
+            List<String> courseCodes = selectedCourses.stream()
+                    .map(GraduationPlanRequestDto.SelectedCourse::getCourseCode)
+                    .collect(Collectors.toList());
+
+            List<Course> courses = courseRepository.findAllByCourseCodeIn(courseCodes);
+            Map<String, Course> courseMap = courses.stream()
+                    .collect(Collectors.toMap(Course::getCourseCode, c -> c));
+
+            for (GraduationPlanRequestDto.SelectedCourse selectedCourse : selectedCourses) {
+                Course course = courseMap.get(selectedCourse.getCourseCode());
+                if (course != null) {
+                    GraduationPlanCourse gpc = GraduationPlanCourse.builder()
+                            .graduationPlan(plan)
+                            .course(course)
+                            .track(selectedCourse.getTrackId())
+                            .build();
+                    graduationPlanCourseRepository.save(gpc);
+                }
+            }
         }
     }
 
