@@ -2,11 +2,7 @@ package grit.guidance.domain.user.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import grit.guidance.domain.course.entity.Course;
 import grit.guidance.domain.course.entity.Semester;
-import grit.guidance.domain.course.entity.Track;
-import grit.guidance.domain.course.repository.CourseRepository;
-import grit.guidance.domain.course.repository.TrackRepository;
 import grit.guidance.domain.user.dto.*;
 import grit.guidance.domain.user.entity.UserTrack;
 import grit.guidance.domain.user.entity.Users;
@@ -20,10 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -33,8 +27,6 @@ public class DashboardService {
     private final UsersRepository usersRepository;
     private final UserTrackRepository userTrackRepository;
     private final RecommendedCourseRepository recommendedCourseRepository;
-    private final CourseRepository courseRepository;
-    private final TrackRepository trackRepository;
     private final ObjectMapper objectMapper;
 
     public DashboardResponseDto getDashboardData(String studentId) {
@@ -98,7 +90,13 @@ public class DashboardService {
      */
     private List<NextSemesterCourseDto> getNextSemesterCourses(Users user) {
         try {
-            List<RecommendedCourse> recommendedCourses = recommendedCourseRepository.findAllByUser(user);
+            // 다음 학기 계산
+            Integer nextGrade = user.getGrade() + 1;
+            Semester nextSemester = user.getSemester() == Semester.FIRST ? Semester.SECOND : Semester.FIRST;
+            
+            // 다음 학기에 해당하는 추천 과목만 조회
+            List<RecommendedCourse> recommendedCourses = recommendedCourseRepository
+                    .findByUserAndRecommendGradeAndRecommendSemester(user, nextGrade, nextSemester);
             
             return recommendedCourses.stream()
                     .map(rc -> new NextSemesterCourseDto(
