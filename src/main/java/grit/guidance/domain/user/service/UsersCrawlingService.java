@@ -6,11 +6,16 @@ import grit.guidance.domain.course.entity.Semester;
 import grit.guidance.domain.user.dto.*; // 위에서 만든 DTO들을 임포트
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -28,10 +33,24 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UsersCrawlingService {
 
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
     private static final String HANSUNG_INFO_URL = "https://info.hansung.ac.kr";
+
+    /**
+     * RestTemplate을 매번 새로 생성하여 쿠키 충돌 방지
+     */
+    private RestTemplate createFreshRestTemplate() {
+        CookieStore cookieStore = new BasicCookieStore();
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultCookieStore(cookieStore)
+                .disableRedirectHandling()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
+                .build();
+
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        return new RestTemplate(requestFactory);
+    }
 
     /**
      * 한성대학교 데이터 크롤링 (기본 메서드)
@@ -39,6 +58,9 @@ public class UsersCrawlingService {
     public HansungDataResponse fetchHansungData(String studentId, String password) throws Exception {
         log.info("=== 크롤링 시작 ===");
         log.info("학번: {}", studentId);
+        
+        // 매번 새로운 RestTemplate 생성
+        RestTemplate restTemplate = createFreshRestTemplate();
 
         // 1. 로그인 요청
         HttpHeaders loginHeaders = new HttpHeaders();
@@ -137,7 +159,8 @@ public class UsersCrawlingService {
             logoutHeaders.add(HttpHeaders.COOKIE, sessionCookie);
             logoutHeaders.add(HttpHeaders.REFERER, HANSUNG_INFO_URL + "/index.jsp");
             
-            // 로그아웃 요청
+            // 새로운 RestTemplate 사용
+            RestTemplate restTemplate = createFreshRestTemplate();
             restTemplate.exchange(
                 HANSUNG_INFO_URL + "/servlet/s_gong.gong_logout",
                 HttpMethod.GET,
@@ -355,10 +378,18 @@ public class UsersCrawlingService {
 
         HttpEntity<MultiValueMap<String, String>> timetableRequest = new HttpEntity<>(timetableBody, timetableHeaders);
 
+        // 새로운 RestTemplate 사용
+        RestTemplate restTemplate = createFreshRestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(timetableDataUrl, timetableRequest, String.class);
         String responseBody = response.getBody();
 
         log.info("시간표 데이터 요청 결과: {}", responseBody);
+
+        // JSON 파싱 전에 HTML 응답인지 확인
+        if (responseBody != null && responseBody.trim().startsWith("<")) {
+            log.warn("HTML 응답을 받았습니다. 세션이 만료되었을 수 있습니다: {}", responseBody.substring(0, Math.min(200, responseBody.length())));
+            throw new RuntimeException("세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
 
         List<TimetableEventDto> events = objectMapper.readValue(responseBody, new TypeReference<>() {});
 
@@ -386,10 +417,18 @@ public class UsersCrawlingService {
 
         HttpEntity<MultiValueMap<String, String>> timetableRequest = new HttpEntity<>(timetableBody, timetableHeaders);
 
+        // 새로운 RestTemplate 사용
+        RestTemplate restTemplate = createFreshRestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(timetableDataUrl, timetableRequest, String.class);
         String responseBody = response.getBody();
 
         log.info("시간표 데이터 요청 결과: {}", responseBody);
+
+        // JSON 파싱 전에 HTML 응답인지 확인
+        if (responseBody != null && responseBody.trim().startsWith("<")) {
+            log.warn("HTML 응답을 받았습니다. 세션이 만료되었을 수 있습니다: {}", responseBody.substring(0, Math.min(200, responseBody.length())));
+            throw new RuntimeException("세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
 
         List<TimetableEventDto> rawEvents = objectMapper.readValue(responseBody, new TypeReference<>() {});
 
