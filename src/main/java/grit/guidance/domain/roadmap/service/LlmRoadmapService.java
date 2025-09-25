@@ -3,8 +3,13 @@ package grit.guidance.domain.roadmap.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,7 +22,6 @@ import java.util.Map;
 @Slf4j
 public class LlmRoadmapService {
 
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
     @Value("${openai.api.key}")
@@ -25,6 +29,21 @@ public class LlmRoadmapService {
 
     @Value("${openai.api.url}")
     private String openaiApiUrl;
+
+    /**
+     * RestTemplate을 매번 새로 생성하여 쿠키 충돌 방지
+     */
+    private RestTemplate createFreshRestTemplate() {
+        CookieStore cookieStore = new BasicCookieStore();
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultCookieStore(cookieStore)
+                .disableRedirectHandling()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
+                .build();
+
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        return new RestTemplate(requestFactory);
+    }
 
     /**
      * LLM에게 로드맵 추천 요청
@@ -218,6 +237,7 @@ public class LlmRoadmapService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         
         log.info("OpenAI API 호출 시작");
+        RestTemplate restTemplate = createFreshRestTemplate();
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
         
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {

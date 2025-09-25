@@ -26,11 +26,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import grit.guidance.domain.user.entity.GraduationRequirement; // import 추가
 import grit.guidance.domain.user.repository.GraduationRequirementRepository; // import 추가
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -47,10 +52,24 @@ public class LoginService {
     private final TrackRepository trackRepository;
     private final CrawlingGraduationRepository crawlingGraduationRepository; // ⭐ 추가: CrawlingGraduation 리포지토리
     private final GraduationRequirementRepository graduationRequirementRepository;
-    private final RestTemplate restTemplate;
     private final JwtService jwtService;
     private final UsersCrawlingService crawlingService;
     private final CrawlingConditionService crawlingConditionService;
+
+    /**
+     * RestTemplate을 매번 새로 생성하여 쿠키 충돌 방지
+     */
+    private RestTemplate createFreshRestTemplate() {
+        CookieStore cookieStore = new BasicCookieStore();
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultCookieStore(cookieStore)
+                .disableRedirectHandling()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
+                .build();
+
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        return new RestTemplate(requestFactory);
+    }
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -122,6 +141,7 @@ public class LoginService {
             loginBody.add("passwd", password);
             HttpEntity<MultiValueMap<String, String>> loginRequest = new HttpEntity<>(loginBody, loginHeaders);
 
+            RestTemplate restTemplate = createFreshRestTemplate();
             ResponseEntity<String> loginResponse = restTemplate.postForEntity(
                     "https://info.hansung.ac.kr/servlet/s_gong.gong_login_ssl",
                     loginRequest,
@@ -155,6 +175,7 @@ public class LoginService {
             logoutHeaders.add(HttpHeaders.COOKIE, sessionCookie);
             logoutHeaders.add(HttpHeaders.REFERER, "https://info.hansung.ac.kr/index.jsp");
             
+            RestTemplate restTemplate = createFreshRestTemplate();
             restTemplate.exchange(
                 "https://info.hansung.ac.kr/servlet/s_gong.gong_logout",
                 HttpMethod.GET,
