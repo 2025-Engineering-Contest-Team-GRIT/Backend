@@ -14,7 +14,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro
-      - letsencrypt_data:/etc/traefik/letsencrypt
+      - ./traefik/letsencrypt:/etc/traefik/letsencrypt
     networks:
       - web
     # environment:
@@ -94,7 +94,6 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
-  letsencrypt_data:
 
 networks:
   backend:

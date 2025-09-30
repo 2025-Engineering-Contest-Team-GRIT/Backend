@@ -108,14 +108,14 @@ jobs:
           whoami
           pwd
         
-    - name: Copy files to server
+    - name: Copy config files to server
       id: copy
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
-        source: "./traefik/**,./docker-compose.prod.yml"
+        source: "./traefik/traefik.yml,./traefik/dynamic_conf.yml,./docker-compose.prod.yml"
         target: /home/ymkim2353/
         debug: true
         
@@ -127,9 +127,10 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          # 필요한 디렉토리 생성
-          sudo mkdir -p traefik/letsencrypt
-          sudo chmod 600 traefik/letsencrypt/acme.json
+          # letsencrypt 디렉토리 생성 (최초 배포 시에만 필요)
+          mkdir -p traefik/letsencrypt
+          touch traefik/letsencrypt/acme.json 2>/dev/null || true
+          chmod 600 traefik/letsencrypt/acme.json
 
           # 환경변수 설정
           export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
